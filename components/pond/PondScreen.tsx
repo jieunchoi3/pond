@@ -131,6 +131,11 @@ export function PondScreen() {
     });
   }
 
+  function removeNote(id: string) {
+    deleteNote(id);
+    if (editingId === id) setEditingId(null);
+  }
+
   const defaultCat =
     selectedTag !== "all" ? selectedTag : (categories[0]?.id ?? "ai art");
 
@@ -146,6 +151,7 @@ export function PondScreen() {
         onToggle={() => setSidebarOpen((value) => !value)}
         onSelect={setTag}
         onOpenNote={setEditingId}
+        onDeleteNote={removeNote}
       />
 
       <div className="mx-auto flex min-h-0 min-w-0 w-full max-w-(--page-max) flex-1 flex-col gap-3 overflow-hidden px-6 py-3">
@@ -162,7 +168,12 @@ export function PondScreen() {
           onPickNote={setEditingId}
         />
 
-        <CatchOfTheDay notes={visibleNotes} onOpen={setEditingId} onRecast={recastNote} />
+        <CatchOfTheDay
+          notes={visibleNotes}
+          onOpen={setEditingId}
+          onRecast={recastNote}
+          onDelete={removeNote}
+        />
 
         <div className="min-h-0 flex-1">
           <PondCanvas notes={notes} visible={visibleIds} onOpen={setEditingId} onCapture={openCapture} />
@@ -184,10 +195,7 @@ export function PondScreen() {
             markActed(editing.id);
             setEditingId(null);
           }}
-          onDelete={() => {
-            deleteNote(editing.id);
-            setEditingId(null);
-          }}
+          onDelete={() => removeNote(editing.id)}
           onClose={() => setEditingId(null)}
         />
       ) : null}

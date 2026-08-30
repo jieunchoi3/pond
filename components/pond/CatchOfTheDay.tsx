@@ -8,9 +8,10 @@ type CatchOfTheDayProps = {
   notes: Note[];
   onOpen: (id: string) => void;
   onRecast: (id: string) => void;
+  onDelete: (id: string) => void;
 };
 
-export function CatchOfTheDay({ notes, onOpen, onRecast }: CatchOfTheDayProps) {
+export function CatchOfTheDay({ notes, onOpen, onRecast, onDelete }: CatchOfTheDayProps) {
   const daily = catchOfTheDay(notes);
 
   return (
@@ -34,7 +35,12 @@ export function CatchOfTheDay({ notes, onOpen, onRecast }: CatchOfTheDayProps) {
       ) : (
         <div className="grid w-full gap-3 p-3 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
           {daily.map((note) => (
-            <CatchCard key={note.id} note={note} onOpen={() => onOpen(note.id)} />
+            <CatchCard
+              key={note.id}
+              note={note}
+              onOpen={() => onOpen(note.id)}
+              onDelete={() => onDelete(note.id)}
+            />
           ))}
         </div>
       )}

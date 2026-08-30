@@ -7,11 +7,20 @@ import type { Note } from "@/lib/notes/types";
 type CatchCardProps = {
   note: Note;
   onOpen: () => void;
+  onDelete: () => void;
 };
 
-export function CatchCard({ note, onOpen }: CatchCardProps) {
+export function CatchCard({ note, onOpen, onDelete }: CatchCardProps) {
   return (
-    <article className="h-full rounded-card border border-line bg-surface-2 px-5 py-3 pl-6">
+    <article className="group relative h-full rounded-card border border-line bg-surface-2 px-5 py-3 pl-6">
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label={`Delete ${note.title || "Untitled spark"}`}
+        className="absolute top-2 right-2 z-10 grid size-8 place-items-center text-ink-soft opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+      >
+        ×
+      </button>
       <button type="button" onClick={onOpen} className="flex h-full w-full flex-col text-left">
         <div className="mb-2 flex items-end gap-3">
           <Fish cat={note.cat} id={note.id} scale={0.28} />

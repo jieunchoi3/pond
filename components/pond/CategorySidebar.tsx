@@ -27,6 +27,7 @@ type CategorySidebarProps = {
   onToggle: () => void;
   onSelect: (tag: FilterTag) => void;
   onOpenNote: (id: string) => void;
+  onDeleteNote: (id: string) => void;
 };
 
 export function CategorySidebar({
@@ -39,6 +40,7 @@ export function CategorySidebar({
   onToggle,
   onSelect,
   onOpenNote,
+  onDeleteNote,
 }: CategorySidebarProps) {
   const categories = usePondCategories();
   const listRef = useRef<HTMLDivElement>(null);
@@ -158,18 +160,30 @@ export function CategorySidebar({
                   sparks.map((note) => {
                     const active = note.id === editingId;
                     return (
-                      <button
+                      <div
                         key={note.id}
-                        type="button"
-                        onClick={() => onOpenNote(note.id)}
-                        className={`type-label flex w-full items-start gap-2 px-5 py-2 pl-14 text-left ${
-                          active ? "bg-surface text-ink" : "text-ink-soft"
+                        className={`group flex items-center gap-1 pl-12 pr-3 ${
+                          active ? "bg-surface" : ""
                         }`}
                       >
-                        <span className="min-w-0 flex-1 truncate">
+                        <button
+                          type="button"
+                          onClick={() => onOpenNote(note.id)}
+                          className={`type-label min-w-0 flex-1 truncate py-2 text-left ${
+                            active ? "text-ink" : "text-ink-soft"
+                          }`}
+                        >
                           {note.title || "Untitled spark"}
-                        </span>
-                      </button>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteNote(note.id)}
+                          aria-label={`Delete ${note.title || "Untitled spark"}`}
+                          className="grid size-8 shrink-0 place-items-center text-ink-soft opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                        >
+                          ×
+                        </button>
+                      </div>
                     );
                   })
                 )}
