@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react";
 import { Fish } from "@/components/pond/Fish";
 import { clipBody, daysLabel } from "@/lib/notes/fish";
 import type { Note } from "@/lib/notes/types";
@@ -17,9 +18,9 @@ export function CatchCard({ note, onOpen, onDelete }: CatchCardProps) {
         type="button"
         onClick={onDelete}
         aria-label={`Delete ${note.title || "Untitled spark"}`}
-        className="absolute top-2 right-2 z-10 grid size-8 place-items-center text-ink-soft opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+        className="absolute top-2 right-2 z-10 grid size-8 place-items-center text-[#C4473A] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
       >
-        ×
+        <Icon icon="bi:trash3" width={14} height={14} />
       </button>
       <button type="button" onClick={onOpen} className="flex h-full w-full flex-col text-left">
         <div className="mb-2 flex items-end gap-3">

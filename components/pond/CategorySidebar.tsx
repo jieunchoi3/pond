@@ -179,9 +179,9 @@ export function CategorySidebar({
                           type="button"
                           onClick={() => onDeleteNote(note.id)}
                           aria-label={`Delete ${note.title || "Untitled spark"}`}
-                          className="grid size-8 shrink-0 place-items-center text-ink-soft opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                          className="grid size-8 shrink-0 place-items-center text-[#C4473A] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
                         >
-                          ×
+                          <Icon icon="bi:trash3" width={14} height={14} />
                         </button>
                       </div>
                     );
