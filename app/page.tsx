@@ -1,5 +1,5 @@
-import { PondScreen } from "@/components/pond/PondScreen";
+import { HomeScreen } from "@/components/home/HomeScreen";
 
 export default function Home() {
-  return <PondScreen />;
+  return <HomeScreen />;
 }

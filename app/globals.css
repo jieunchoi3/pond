@@ -17,8 +17,8 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-line: var(--line);
-  --color-koi: var(--koi);
-  --color-koi-soft: var(--koi-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-water-1: var(--water-1);
   --color-water-2: var(--water-2);
   --color-water-3: var(--water-3);
@@ -40,7 +40,6 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -63,6 +62,7 @@
   --radius-pill: var(--r-pill);
   --shadow-pond-sm: var(--shadow-sm);
   --shadow-pond-lg: var(--shadow-lg);
+  --spacing-fab: var(--size-fab);
 }
 
 :root {
@@ -71,8 +71,8 @@
   --surface: #ffffff;
   --surface-2: #f4f7f6;
   --line: rgba(31, 42, 40, 0.1);
-  --koi: #e4652f;
-  --koi-soft: #ffd1a8;
+  --accent: #e4652f;
+  --accent-soft: #ffd1a8;
   --water-1: #eaf4f0;
   --water-2: #c8e1de;
   --water-3: #9bc7cc;
@@ -81,6 +81,13 @@
   --r-pill: 999px;
   --shadow-sm: 0 2px 8px rgba(20, 50, 55, 0.08);
   --shadow-lg: 0 8px 24px rgba(20, 50, 55, 0.12);
+  --text-display: 28px;
+  --text-title: 20px;
+  --text-body: 16px;
+  --text-label: 14px;
+  --text-caption: 12px;
+  --size-fab: 72px;
+  --page-max: 1392px;
 
   --background: var(--surface);
   --foreground: var(--ink);
@@ -88,32 +95,31 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: var(--koi);
-  --primary-foreground: #ffffff;
+  --primary: var(--accent);
+  --primary-foreground: var(--surface);
   --secondary: var(--surface-2);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-2);
   --muted-foreground: var(--ink-soft);
-  --accent: var(--surface-2);
-  --accent-foreground: var(--ink);
-  --destructive: #c23b22;
+  --accent-foreground: var(--surface);
+  --destructive: var(--accent);
   --border: var(--line);
   --input: var(--line);
-  --ring: var(--koi);
-  --chart-1: var(--koi);
+  --ring: var(--accent);
+  --chart-1: var(--accent);
   --chart-2: var(--water-3);
-  --chart-3: var(--koi-soft);
+  --chart-3: var(--accent-soft);
   --chart-4: var(--ink-soft);
   --chart-5: var(--ink);
-  --radius: 12px;
+  --radius: var(--r-card);
   --sidebar: var(--surface-2);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--koi);
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--surface);
   --sidebar-accent: var(--water-1);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--line);
-  --sidebar-ring: var(--koi);
+  --sidebar-ring: var(--accent);
 }
 
 .dark {
@@ -123,26 +129,25 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: var(--koi);
-  --primary-foreground: #ffffff;
+  --primary: var(--accent);
+  --primary-foreground: var(--surface);
   --secondary: var(--surface-2);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-2);
   --muted-foreground: var(--ink-soft);
-  --accent: var(--surface-2);
-  --accent-foreground: var(--ink);
-  --destructive: #c23b22;
+  --accent-foreground: var(--surface);
+  --destructive: var(--accent);
   --border: var(--line);
   --input: var(--line);
-  --ring: var(--koi);
+  --ring: var(--accent);
   --sidebar: var(--surface-2);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--koi);
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--surface);
   --sidebar-accent: var(--water-1);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--line);
-  --sidebar-ring: var(--koi);
+  --sidebar-ring: var(--accent);
 }
 
 @layer base {
@@ -161,14 +166,14 @@
   }
 
   ::selection {
-    background: var(--koi-soft);
+    background: var(--accent-soft);
     color: var(--ink);
   }
 }
 
 @utility type-display {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: var(--text-display);
   font-weight: 300;
   line-height: 1.25;
   letter-spacing: -0.02em;
@@ -177,7 +182,7 @@
 
 @utility type-title {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--text-title);
   font-weight: 400;
   line-height: 1.35;
   color: var(--ink);
@@ -185,96 +190,22 @@
 
 @utility type-body {
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: var(--text-body);
   font-weight: 400;
   line-height: 1.55;
 }
 
 @utility type-label {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: var(--text-label);
   font-weight: 400;
   line-height: 1.4;
 }
 
 @utility type-caption {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-weight: 400;
   line-height: 1.4;
   color: var(--ink-soft);
-}
-
-@keyframes pond-caustic {
-  0% {
-    background-position: 0% 40%, 100% 60%, 40% 0%;
-  }
-  50% {
-    background-position: 20% 60%, 80% 40%, 60% 20%;
-  }
-  100% {
-    background-position: 0% 40%, 100% 60%, 40% 0%;
-  }
-}
-
-@keyframes pond-swim {
-  0% {
-    transform: translate(0, 0);
-  }
-  25% {
-    transform: translate(var(--dx), calc(var(--dy) * -1));
-  }
-  50% {
-    transform: translate(calc(var(--dx) * 0.35), var(--dy));
-  }
-  75% {
-    transform: translate(calc(var(--dx) * -0.25), calc(var(--dy) * 0.45));
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-@keyframes pond-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-.pond-water {
-  background-color: var(--water-2);
-  background-image:
-    radial-gradient(ellipse 70% 50% at 18% 28%, var(--water-1) 0%, transparent 55%),
-    radial-gradient(ellipse 55% 45% at 82% 72%, var(--water-3) 0%, transparent 50%),
-    linear-gradient(180deg, var(--water-1) 0%, var(--water-2) 52%, var(--water-3) 100%);
-  background-size: 140% 140%, 140% 140%, 100% 100%;
-  animation: pond-caustic 18s ease-in-out infinite;
-}
-
-.pond-fish {
-  position: absolute;
-  filter: drop-shadow(var(--shadow-sm));
-  animation: pond-swim var(--dur) ease-in-out var(--delay) infinite;
-  will-change: transform;
-}
-
-.pond-fish img {
-  display: block;
-  width: 100%;
-  height: auto;
-  animation: pond-bob calc(var(--dur) / 3) ease-in-out infinite;
-  pointer-events: none;
-  user-select: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pond-water,
-  .pond-fish,
-  .pond-fish img {
-    animation: none;
-  }
 }

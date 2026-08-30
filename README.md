@@ -1,22 +1,45 @@
 # Pond
 
-A koi pond for sparks — notes you throw in the water and fish out later.
+A koi pond for sparks. This session is the **capture path only** — list + magic-link auth + a full-screen sheet. The pond, fish, catch of the day, and note editor are not built yet.
 
-Built from the corrected `filmmee` token set in [`DESIGN.md`](./DESIGN.md): Inria Serif for headings, Pretendard for Korean-safe body copy, a single vermilion accent, and one 72px capture button.
+Tokens live in [`DESIGN.md`](./DESIGN.md). Figma is for layout later; colours, fonts, radii and shadows always come from that file.
 
-## Run locally
+## Run
 
 ```bash
 npm install
+cp .env.example .env.local   # then fill in your Supabase keys
 npm run dev
 ```
 
 Open [http://localhost:43217](http://localhost:43217).
 
-## What’s here
+## Supabase (so a note lands in the table)
 
-- **Pond screen** — search, filter chips, catch of the day, swimming pond, capture FAB
-- **Note editor** — title, Korean-safe body, mic / image / YouTube / expand toolbar
-- Notes persist in `localStorage` (`pond.notes.v1`)
+1. Create a project at [supabase.com](https://supabase.com).
+2. Put the URL and publishable (or legacy anon) key in `.env.local`:
 
-Figma MCP could not authenticate in the cloud session, so fish are named SVG-quality PNG cut-outs at `/public/fish/` (`koi-white`, `goldfish-orange`, `tang-blue`, `betta-lilac`, plus four more species). Swap in 2× exports from nodes `847:1086` / `850:1522` when the file is connected.
+```
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+3. In the SQL editor, run `supabase/migrations/20260830004342_ponds_and_notes.sql`.
+4. Auth → URL configuration: add `http://localhost:43217/auth/callback` (and your Vercel URL) to Redirect URLs. Set Site URL to the same origin.
+5. Sign in with the magic link, tap +, type, Release. The row should appear in `public.notes`.
+
+Captures never wait on the network. They write to local state first, then upsert. If you are signed out, they sit in an outbox until the magic link completes.
+
+## Capture speed
+
+The sheet is **always mounted**. The + click focuses the textarea in the same user-gesture turn (required for the iOS keyboard). That is the only way to keep “tap → blinking cursor” under 400ms.
+
+Choices that would break it (and were not used):
+
+- Navigating to `/capture`
+- Mounting the sheet on click (`{open && <Sheet />}`)
+- Radix/Dialog enter animation
+- Focusing in `useEffect` after React commit (also kills the iOS keyboard)
+- Awaiting `getSession()` or insert before showing the sheet
+
+`pond-prototype.jsx` is a reference for the later rAF pond. Do not import it.

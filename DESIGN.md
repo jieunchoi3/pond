@@ -151,7 +151,17 @@ The fish PNGs are real image fills in the file (`image 365`, `366`, `370`, `373`
 1. **Remove the white fringing** on the cut-outs — visible on the red and pink fish. Re-mask, or the halo will show against the water on every screen.
 2. Name them by species, not `image 373`: `koi-white.png`, `goldfish-orange.png`, `tang-blue.png`, `betta-lilac.png`.
 
-Figma MCP could not authenticate in this cloud session, so fish are implemented as named SVG cut-outs (no white halo) at `/public/fish/`. Swap in 2x PNG exports from the file when available.
+Figma MCP could not authenticate in this cloud session, so fish are implemented as named SVG-quality PNG cut-outs at `/public/fish/`. Swap in 2× exports from the file when available.
+
+---
+
+## Product rules
+
+These override any older spec:
+
+- Fish **size = neglect** (days since `acted_at`), not age. Cap at 90 days / 1.2×.
+- A note is **title + body + board** (`blocks` jsonb). One note type.
+- Figma is for layout, spacing, hierarchy and assets. Colours, fonts, sizes, radii and shadows come from this file. If they disagree, this file wins.
 
 ---
 
