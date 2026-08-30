@@ -32,7 +32,7 @@ export function CatchOfTheDay({ notes, onOpen, onRecast }: CatchOfTheDayProps) {
           Nothing older than {CATCH_MIN_DAYS} days. Let a spark sit, then recast it.
         </p>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 p-4">
+        <div className="grid w-full gap-4 p-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
           {daily.map((note) => (
             <CatchCard key={note.id} note={note} onOpen={() => onOpen(note.id)} />
           ))}

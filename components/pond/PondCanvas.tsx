@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { CaptureButton } from "@/components/capture/CaptureButton";
 import {
   ALL_FISH_SRCS,
@@ -99,7 +99,7 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
     }
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const pond = pondRef.current;
     if (!pond) return;
 
@@ -192,16 +192,6 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       if (img && img.getAttribute("src") !== src) img.src = src;
     }
 
-    measure();
-    shown.forEach((note, index) => {
-      const m = swim.current[note.id];
-      if (!m) return;
-      if (bounds.current.w > 0 && bounds.current.h > 0) {
-        if (!m.placed) seed(m, index, bounds.current.w, bounds.current.h);
-        else clampToPond(m, bounds.current.w, bounds.current.h);
-      }
-    });
-
     let raf = 0;
     let last = performance.now();
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -210,6 +200,18 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       reduce = motionQuery.matches;
     };
     motionQuery.addEventListener("change", onMotion);
+
+    measure();
+    shown.forEach((note, index) => {
+      const m = swim.current[note.id];
+      const el = nodes.current[note.id];
+      if (!m || !el) return;
+      if (bounds.current.w > 0 && bounds.current.h > 0) {
+        if (!m.placed) seed(m, index, bounds.current.w, bounds.current.h);
+        else clampToPond(m, bounds.current.w, bounds.current.h);
+      }
+      paint(m, el, imgs.current[note.id] ?? null, last, reduce);
+    });
 
     const observer = new ResizeObserver(() => {
       const prev = bounds.current;
