@@ -6,6 +6,7 @@ import type { BlockType } from "@/lib/notes/types";
 type EditorToolbarProps = {
   onAdd: (type: BlockType) => void;
   onExpand: () => void;
+  expanded?: boolean;
 };
 
 const ACTIONS: { type: BlockType; icon: string; label: string }[] = [
@@ -14,7 +15,7 @@ const ACTIONS: { type: BlockType; icon: string; label: string }[] = [
   { type: "video", icon: "ant-design:youtube-outlined", label: "Add video" },
 ];
 
-export function EditorToolbar({ onAdd, onExpand }: EditorToolbarProps) {
+export function EditorToolbar({ onAdd, onExpand, expanded = false }: EditorToolbarProps) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
       <span className="type-label shrink-0 px-2 text-ink">canvas mode</span>
@@ -34,7 +35,7 @@ export function EditorToolbar({ onAdd, onExpand }: EditorToolbarProps) {
         type="button"
         onPointerDown={(event) => event.stopPropagation()}
         onClick={onExpand}
-        aria-label="Expand board"
+        aria-label={expanded ? "Collapse sheet" : "Expand to full screen"}
         className="ml-auto grid size-10 shrink-0 place-items-center rounded-pill bg-surface-2 text-ink-soft"
       >
         <Icon icon="ant-design:expand-alt-outlined" width={18} height={18} />

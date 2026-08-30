@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
 import { CategoryPicker } from "@/components/pond/CategoryPicker";
-import { Fish } from "@/components/pond/Fish";
 import { daysIdle, defaultBlock, hasBoard } from "@/lib/notes/fish";
 import {
   imageFileFromClipboard,
@@ -43,7 +42,8 @@ export function NoteEditor({
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -113,7 +113,6 @@ export function NoteEditor({
     >
       <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3.5">
         <div className="flex items-center gap-2">
-          <Fish cat={note.cat} id={note.id} scale={0.45} />
           <CategoryPicker
             value={note.cat}
             noteId={note.id}
