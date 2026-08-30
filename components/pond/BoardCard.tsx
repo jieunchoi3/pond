@@ -9,6 +9,7 @@ import {
   isEmbeddedImage,
   isShownImage,
 } from "@/lib/notes/image";
+import { youtubeEmbedSrc, youtubeId } from "@/lib/notes/youtube";
 
 type BoardCardProps = {
   block: NoteBlock;
@@ -28,6 +29,7 @@ export function BoardCard({
   const drag = useRef<{ dx: number; dy: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
+  const embedSrc = block.type === "video" ? youtubeEmbedSrc(block.content) : null;
 
   function startDrag(event: React.PointerEvent<HTMLDivElement>) {
     if (!floating) return;
@@ -70,8 +72,13 @@ export function BoardCard({
       className="overflow-hidden rounded-card border border-line bg-surface shadow-pond-sm"
       style={
         floating
-          ? { position: "absolute", left: block.x, top: block.y, width: block.w }
-          : { width: block.type === "colour" ? 110 : 200 }
+          ? {
+              position: "absolute",
+              left: block.x,
+              top: block.y,
+              width: embedSrc ? Math.max(block.w, 280) : block.w,
+            }
+          : { width: block.type === "colour" ? 110 : block.type === "video" ? 280 : 200 }
       }
       onPaste={
         block.type === "image"
@@ -179,14 +186,30 @@ export function BoardCard({
       ) : null}
       {block.type === "video" ? (
         <>
-          <div className="grid h-[88px] place-items-center bg-ink">
-            <span className="grid size-[34px] place-items-center rounded-pill bg-accent text-[13px] text-surface">
-              ▶
-            </span>
-          </div>
+          {embedSrc ? (
+            <div className="aspect-video w-full bg-ink">
+              <iframe
+                src={embedSrc}
+                title="YouTube video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="h-full w-full border-0"
+              />
+            </div>
+          ) : (
+            <div className="grid h-[88px] place-items-center bg-ink">
+              <span className="grid size-[34px] place-items-center rounded-pill bg-accent text-[13px] text-surface">
+                ▶
+              </span>
+            </div>
+          )}
           <input
             value={block.content}
-            onChange={(event) => onChange({ ...block, content: event.target.value })}
+            onChange={(event) => {
+              const content = event.target.value;
+              const wide = youtubeId(content) ? Math.max(block.w, 280) : block.w;
+              onChange({ ...block, content, w: wide });
+            }}
             placeholder="YouTube URL"
             className="type-label w-full bg-transparent px-2.5 py-1.5 text-ink-soft outline-none"
           />

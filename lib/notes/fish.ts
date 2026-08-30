@@ -208,7 +208,9 @@ export function defaultBlockContent(type: BlockType) {
 }
 
 export function defaultBlockWidth(type: BlockType) {
-  return type === "colour" ? 110 : 200;
+  if (type === "colour") return 110;
+  if (type === "video") return 280;
+  return 200;
 }
 
 export function defaultBlock(type: BlockType, index: number) {

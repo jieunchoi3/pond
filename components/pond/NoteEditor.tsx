@@ -73,7 +73,7 @@ export function NoteEditor({
       content: DEFAULTS[type],
       x: 24 + (count % 3) * 130,
       y: 24 + Math.floor(count / 3) * 118,
-      w: type === "colour" ? 110 : 200,
+      w: type === "colour" ? 110 : type === "video" ? 280 : 200,
     };
     onChange({ blocks: [...note.blocks, next] });
     if (split > 0.6) setSplit(0.42);
