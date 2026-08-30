@@ -154,7 +154,7 @@ export function PondScreen() {
         onDeleteNote={removeNote}
       />
 
-      <div className="mx-auto flex min-h-0 min-w-0 w-full max-w-(--page-max) flex-1 flex-col gap-3 overflow-hidden px-6 py-3">
+      <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-3 overflow-hidden px-6 py-3">
         {isSupabaseConfigured() ? (
           <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
         ) : null}

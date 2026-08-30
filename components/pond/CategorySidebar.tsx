@@ -98,8 +98,8 @@ export function CategorySidebar({
       ) : null}
 
       <aside
-        className={`relative z-30 h-full shrink-0 bg-surface-2 transition-[width] duration-200 ${
-          open ? "w-[280px]" : "w-0"
+        className={`relative z-30 h-full bg-surface-2 transition-[width] duration-200 ${
+          open ? "w-[280px] shrink-0" : "w-0 min-w-0 shrink-0"
         } ${narrow ? "absolute inset-y-0 left-0 shadow-pond-lg" : ""}`}
       >
         <div
@@ -236,7 +236,7 @@ export function CategorySidebar({
           onClick={onToggle}
           aria-pressed={open}
           aria-label={open ? "Hide categories" : "Show categories"}
-          className="absolute top-1/2 right-0 z-40 flex h-[72px] w-10 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-pill bg-surface text-ink-soft shadow-pond-sm"
+          className="pointer-events-auto absolute top-1/2 right-0 z-40 flex h-[72px] w-10 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-pill bg-surface text-ink-soft shadow-pond-sm"
         >
           <Icon
             icon="bi:chevron-left"
