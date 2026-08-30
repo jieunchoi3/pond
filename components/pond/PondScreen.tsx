@@ -172,6 +172,11 @@ export function PondScreen() {
         onSelect={(id) => selectCategory(selectedTag === id ? "all" : id)}
         onOpenNote={openNote}
         onDeleteNote={removeNote}
+        onAddNote={(cat, title) => {
+          const note = addNote({ cat, title, userId: null });
+          setTag(cat);
+          openNote(note.id);
+        }}
       />
 
       <div

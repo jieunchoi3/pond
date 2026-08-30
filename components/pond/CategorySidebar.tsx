@@ -28,6 +28,7 @@ type CategorySidebarProps = {
   onSelect: (tag: FilterTag) => void;
   onOpenNote: (id: string) => void;
   onDeleteNote: (id: string) => void;
+  onAddNote: (cat: string, title: string) => void;
 };
 
 export function CategorySidebar({
@@ -41,12 +42,14 @@ export function CategorySidebar({
   onSelect,
   onOpenNote,
   onDeleteNote,
+  onAddNote,
 }: CategorySidebarProps) {
   const categories = usePondCategories();
   const listRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<{ name: string; fishKey: string } | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | "draft" | null>(null);
+  const [sparkDraft, setSparkDraft] = useState<{ cat: string; title: string } | null>(null);
 
   const grouped = useMemo(() => {
     return categories.map((item) => ({
@@ -71,11 +74,25 @@ export function CategorySidebar({
 
   function startAdd() {
     setEditingCat(null);
+    setSparkDraft(null);
     setDraft({
       name: "",
       fishKey: unusedFishKey(categories.map((item) => item.fishKey)),
     });
     setPickerFor(null);
+  }
+
+  function startSpark(cat: string) {
+    setEditingCat(null);
+    setDraft(null);
+    setPickerFor(null);
+    setSparkDraft({ cat, title: "" });
+  }
+
+  function saveSparkDraft() {
+    if (!sparkDraft) return;
+    onAddNote(sparkDraft.cat, sparkDraft.title);
+    setSparkDraft(null);
   }
 
   function saveDraft() {
@@ -129,6 +146,7 @@ export function CategorySidebar({
                   onSelect={() => onSelect(item.id)}
                   onEdit={() => {
                     setDraft(null);
+                    setSparkDraft(null);
                     setEditingCat(item.id);
                     setPickerFor(null);
                   }}
@@ -154,10 +172,7 @@ export function CategorySidebar({
                   }}
                   canDelete={categories.length > 1}
                 />
-                {sparks.length === 0 ? (
-                  <p className="type-label px-5 py-2 pl-14 text-ink-soft">no sparks yet</p>
-                ) : (
-                  sparks.map((note) => {
+                {sparks.map((note) => {
                     const active = note.id === editingId;
                     return (
                       <div
@@ -185,7 +200,23 @@ export function CategorySidebar({
                         </button>
                       </div>
                     );
-                  })
+                  })}
+                {sparkDraft?.cat === item.id ? (
+                  <SparkDraftRow
+                    title={sparkDraft.title}
+                    onTitle={(title) => setSparkDraft({ ...sparkDraft, title })}
+                    onSave={saveSparkDraft}
+                    onCancel={() => setSparkDraft(null)}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => startSpark(item.id)}
+                    className="type-label flex w-full items-center gap-2 py-2 pr-3 pl-14 text-left text-ink-soft"
+                  >
+                    <Icon icon="ant-design:plus" width={12} height={12} />
+                    add spark
+                  </button>
                 )}
               </section>
             ))}
@@ -434,8 +465,15 @@ function DraftRow({
         aria-label="New category name"
         className="type-label min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-soft"
         onKeyDown={(event) => {
-          if (event.key === "Enter") onSave();
-          if (event.key === "Escape") onCancel();
+          if (event.key === "Enter") {
+            event.preventDefault();
+            onSave();
+          }
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            onCancel();
+          }
         }}
       />
       <button type="button" onClick={onSave} className="type-label shrink-0 text-accent">
@@ -445,6 +483,54 @@ function DraftRow({
         ×
       </button>
       {picking ? <FishPicker current={fishKey} onPick={onFish} /> : null}
+    </div>
+  );
+}
+
+function SparkDraftRow({
+  title,
+  onTitle,
+  onSave,
+  onCancel,
+}: {
+  title: string;
+  onTitle: (title: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  return (
+    <div className="flex items-center gap-1 bg-surface py-1 pr-3 pl-14">
+      <input
+        ref={inputRef}
+        value={title}
+        onChange={(event) => onTitle(event.target.value)}
+        placeholder="spark title"
+        aria-label="New spark title"
+        className="type-label min-w-0 flex-1 bg-transparent py-1 text-ink outline-none placeholder:text-ink-soft"
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            onSave();
+          }
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            onCancel();
+          }
+        }}
+      />
+      <button type="button" onClick={onSave} className="type-label shrink-0 text-accent">
+        add
+      </button>
+      <button type="button" onClick={onCancel} className="type-label px-1 text-ink-soft">
+        ×
+      </button>
     </div>
   );
 }
