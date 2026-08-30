@@ -131,6 +131,11 @@ export function PondScreen() {
     });
   }
 
+  function openNote(id: string) {
+    setEditingId(id);
+    if (narrow) setSidebarOpen(false);
+  }
+
   function removeNote(id: string) {
     deleteNote(id);
     if (editingId === id) setEditingId(null);
@@ -140,7 +145,10 @@ export function PondScreen() {
     selectedTag !== "all" ? selectedTag : (categories[0]?.id ?? "ai art");
 
   return (
-    <div ref={rootRef} className="relative flex h-dvh overflow-hidden bg-water-1">
+    <div
+      ref={rootRef}
+      className={`relative flex h-dvh overflow-hidden ${editing ? "bg-surface-2" : "bg-water-1"}`}
+    >
       <CategorySidebar
         open={sidebarOpen}
         selected={selectedTag}
@@ -150,34 +158,55 @@ export function PondScreen() {
         narrow={narrow}
         onToggle={() => setSidebarOpen((value) => !value)}
         onSelect={setTag}
-        onOpenNote={setEditingId}
+        onOpenNote={openNote}
         onDeleteNote={removeNote}
       />
 
-      <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-3 overflow-hidden px-6 py-3">
-        {isSupabaseConfigured() ? (
-          <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
-        ) : null}
+      <div
+        className={`flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden ${
+          editing ? "p-3" : "gap-3 px-6 py-3"
+        }`}
+      >
+        {editing ? (
+          <NoteEditor
+            key={editing.id}
+            note={editing}
+            narrow={narrow}
+            onChange={(next) => patchNote(editing.id, next)}
+            onActed={() => {
+              markActed(editing.id);
+              setEditingId(null);
+            }}
+            onDelete={() => removeNote(editing.id)}
+            onClose={() => setEditingId(null)}
+          />
+        ) : (
+          <>
+            {isSupabaseConfigured() ? (
+              <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
+            ) : null}
 
-        <SearchAndFilters
-          query={query}
-          tag={selectedTag}
-          notes={notes}
-          onQueryChange={setQuery}
-          onTagChange={setTag}
-          onPickNote={setEditingId}
-        />
+            <SearchAndFilters
+              query={query}
+              tag={selectedTag}
+              notes={notes}
+              onQueryChange={setQuery}
+              onTagChange={setTag}
+              onPickNote={openNote}
+            />
 
-        <CatchOfTheDay
-          notes={visibleNotes}
-          onOpen={setEditingId}
-          onRecast={recastNote}
-          onDelete={removeNote}
-        />
+            <CatchOfTheDay
+              notes={visibleNotes}
+              onOpen={openNote}
+              onRecast={recastNote}
+              onDelete={removeNote}
+            />
 
-        <div className="min-h-0 flex-1">
-          <PondCanvas notes={notes} visible={visibleIds} onOpen={setEditingId} onCapture={openCapture} />
-        </div>
+            <div className="min-h-0 flex-1">
+              <PondCanvas notes={notes} visible={visibleIds} onOpen={openNote} onCapture={openCapture} />
+            </div>
+          </>
+        )}
       </div>
 
       <CaptureSheet
@@ -185,20 +214,6 @@ export function PondScreen() {
         defaultCat={defaultCat}
         onRelease={saveSpark}
       />
-
-      {editing ? (
-        <NoteEditor
-          note={editing}
-          narrow={narrow}
-          onChange={(next) => patchNote(editing.id, next)}
-          onActed={() => {
-            markActed(editing.id);
-            setEditingId(null);
-          }}
-          onDelete={() => removeNote(editing.id)}
-          onClose={() => setEditingId(null)}
-        />
-      ) : null}
     </div>
   );
 }

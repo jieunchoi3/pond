@@ -103,7 +103,7 @@ export function NoteEditor({
 
   return (
     <div
-      className="absolute inset-0 z-50 flex flex-col bg-surface"
+      className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-card bg-surface shadow-pond-lg"
       onPaste={(event) => {
         const file = imageFileFromClipboard(event);
         if (!file) return;
