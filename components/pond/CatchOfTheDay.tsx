@@ -28,11 +28,11 @@ export function CatchOfTheDay({ notes, onOpen, onRecast }: CatchOfTheDayProps) {
         ) : null}
       </div>
       {daily.length === 0 ? (
-        <p className="type-body px-5 py-6 text-ink-soft">
+        <p className="type-card-body px-5 py-6 text-ink-soft">
           Nothing older than {CATCH_MIN_DAYS} days. Let a spark sit, then recast it.
         </p>
       ) : (
-        <div className="grid w-full gap-4 p-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
+        <div className="grid w-full gap-4 p-4 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
           {daily.map((note) => (
             <CatchCard key={note.id} note={note} onOpen={() => onOpen(note.id)} />
           ))}

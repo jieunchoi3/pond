@@ -15,7 +15,7 @@ export function MagicLinkForm({ email, onSignedOut }: MagicLinkFormProps) {
 
   if (!isSupabaseConfigured()) {
     return (
-      <p className="type-caption">
+      <p className="type-label text-ink-soft">
         Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to
         sync notes to a table. Captures still save on this device.
       </p>
@@ -25,7 +25,7 @@ export function MagicLinkForm({ email, onSignedOut }: MagicLinkFormProps) {
   if (email) {
     return (
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="type-caption">{email}</p>
+        <p className="type-label text-ink-soft">{email}</p>
         <button
           type="button"
           className="type-label text-ink-soft"
@@ -71,7 +71,7 @@ export function MagicLinkForm({ email, onSignedOut }: MagicLinkFormProps) {
         value={value}
         onChange={(event) => setValue(event.target.value)}
         placeholder="email for magic link"
-        className="type-label h-12 flex-1 rounded-input border border-line bg-surface-2 px-4 text-ink outline-none"
+        className="type-input h-12 flex-1 rounded-input border border-line bg-surface-2 px-4 text-ink outline-none"
       />
       <button
         type="submit"
@@ -80,7 +80,7 @@ export function MagicLinkForm({ email, onSignedOut }: MagicLinkFormProps) {
       >
         {status === "sending" ? "Sending" : "Send link"}
       </button>
-      {message ? <p className="type-caption w-full">{message}</p> : null}
+      {message ? <p className="type-label w-full text-ink-soft">{message}</p> : null}
     </form>
   );
 }

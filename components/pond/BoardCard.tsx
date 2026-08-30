@@ -60,7 +60,7 @@ export function BoardCard({
           floating ? "cursor-grab touch-none" : ""
         }`}
       >
-        <span className="type-caption tracking-[0.08em]">{block.type}</span>
+        <span className="type-label tracking-[0.08em] text-ink-soft">{block.type}</span>
         <button
           type="button"
           onClick={() => onDelete(block.id)}
@@ -76,7 +76,7 @@ export function BoardCard({
           <input
             value={block.content}
             onChange={(event) => onChange({ ...block, content: event.target.value })}
-            className="type-caption w-full bg-transparent px-2.5 py-1.5 text-ink-soft outline-none"
+            className="type-label w-full bg-transparent px-2.5 py-1.5 text-ink-soft outline-none"
           />
         </>
       ) : null}
@@ -86,7 +86,7 @@ export function BoardCard({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={block.content} alt="" className="block max-h-40 w-full object-cover" />
           ) : (
-            <div className="grid h-[92px] place-items-center bg-water-2 type-caption text-ink">
+            <div className="grid h-[92px] place-items-center bg-water-2 type-label text-ink">
               paste an image URL
             </div>
           )}
@@ -94,7 +94,7 @@ export function BoardCard({
             value={block.content}
             onChange={(event) => onChange({ ...block, content: event.target.value })}
             placeholder="image URL"
-            className="type-caption w-full bg-transparent px-2.5 py-1.5 text-ink-soft outline-none"
+            className="type-label w-full bg-transparent px-2.5 py-1.5 text-ink-soft outline-none"
           />
         </>
       ) : null}
@@ -109,7 +109,7 @@ export function BoardCard({
             value={block.content}
             onChange={(event) => onChange({ ...block, content: event.target.value })}
             placeholder="YouTube URL"
-            className="type-caption w-full bg-transparent px-2.5 py-1.5 text-ink-soft outline-none"
+            className="type-label w-full bg-transparent px-2.5 py-1.5 text-ink-soft outline-none"
           />
         </>
       ) : null}
@@ -131,7 +131,7 @@ export function BoardCard({
               />
             ))}
           </svg>
-          <span className="type-caption">{block.content}</span>
+          <span className="type-label text-ink-soft">{block.content}</span>
         </div>
       ) : null}
     </article>

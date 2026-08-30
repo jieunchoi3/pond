@@ -85,7 +85,7 @@ export function NoteEditor({
       <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3.5">
         <div className="flex items-center gap-2">
           <Fish cat={note.cat} id={note.id} scale={0.45} />
-          <span className="type-caption tracking-[0.08em]">
+          <span className="type-label tracking-[0.08em] text-ink-soft">
             {note.cat.toUpperCase()} · {daysIdle(note.acted_at)}d
           </span>
         </div>
@@ -116,7 +116,7 @@ export function NoteEditor({
             value={note.title}
             onChange={(event) => onChange({ title: event.target.value })}
             placeholder="Add your original spark"
-            className="type-title w-full border-b border-line bg-transparent py-3 text-ink outline-none placeholder:text-ink-soft"
+            className="type-note-title w-full border-b border-line bg-transparent py-3 text-ink outline-none placeholder:text-ink-soft"
           />
           <textarea
             value={note.body}

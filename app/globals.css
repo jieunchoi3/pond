@@ -1,16 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "../node_modules/pretendard/dist/web/variable/pretendardvariable.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Pretendard Variable", Pretendard, system-ui, sans-serif;
-  --font-display: var(--font-inria), Georgia, serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-input);
   --font-heading: var(--font-display);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
@@ -66,6 +64,11 @@
 }
 
 :root {
+  --font-display: var(--font-inria), var(--font-42dot), Georgia, serif;
+  --font-hand: var(--font-indie), var(--font-42dot), cursive;
+  --font-ui: var(--font-inter), var(--font-42dot), system-ui, sans-serif;
+  --font-input: var(--font-42dot), system-ui, sans-serif;
+
   --ink: #1f2a28;
   --ink-soft: #667874;
   --surface: #ffffff;
@@ -81,11 +84,6 @@
   --r-pill: 999px;
   --shadow-sm: 0 2px 8px rgba(20, 50, 55, 0.08);
   --shadow-lg: 0 8px 24px rgba(20, 50, 55, 0.12);
-  --text-display: 28px;
-  --text-title: 20px;
-  --text-body: 16px;
-  --text-label: 14px;
-  --text-caption: 12px;
   --size-fab: 72px;
   --page-max: 1392px;
 
@@ -157,12 +155,13 @@
 
   html {
     color-scheme: light;
-    font-family: var(--font-sans);
+    font-family: var(--font-ui);
   }
 
   body {
     background: var(--surface);
     color: var(--ink);
+    font-family: var(--font-ui);
   }
 
   ::selection {
@@ -173,41 +172,104 @@
 
 @utility type-display {
   font-family: var(--font-display);
-  font-size: var(--text-display);
+  font-size: 28px;
   font-weight: 300;
   line-height: 1.25;
   letter-spacing: -0.02em;
   color: var(--ink);
 }
 
-@utility type-title {
+@utility type-card-title {
   font-family: var(--font-display);
-  font-size: var(--text-title);
+  font-size: 20px;
   font-weight: 400;
-  line-height: 1.35;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+@utility type-note-title {
+  font-family: var(--font-hand);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.3;
   color: var(--ink);
 }
 
 @utility type-body {
-  font-family: var(--font-sans);
-  font-size: var(--text-body);
+  font-family: var(--font-hand);
+  font-size: 16px;
   font-weight: 400;
-  line-height: 1.55;
+  line-height: 1.6;
+}
+
+@utility type-card-body {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 @utility type-label {
-  font-family: var(--font-sans);
-  font-size: var(--text-label);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+}
+
+@utility type-input {
+  font-family: var(--font-input);
+  font-size: 16px;
   font-weight: 400;
   line-height: 1.4;
 }
 
-@utility type-caption {
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  font-weight: 400;
-  line-height: 1.4;
+@utility rounded-card {
+  border-radius: var(--r-card);
+}
+
+@utility rounded-input {
+  border-radius: var(--r-input);
+}
+
+@utility rounded-pill {
+  border-radius: var(--r-pill);
+}
+
+@utility shadow-pond-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+@utility shadow-pond-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+@utility text-ink {
+  color: var(--ink);
+}
+
+@utility text-ink-soft {
   color: var(--ink-soft);
+}
+
+@utility bg-surface {
+  background-color: var(--surface);
+}
+
+@utility bg-surface-2 {
+  background-color: var(--surface-2);
+}
+
+@utility bg-accent {
+  background-color: var(--accent);
+}
+
+@utility bg-accent-soft {
+  background-color: var(--accent-soft);
+}
+
+@utility border-line {
+  border: 1px solid var(--line);
 }
 
 .pond-water {

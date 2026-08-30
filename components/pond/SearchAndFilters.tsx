@@ -29,7 +29,7 @@ export function SearchAndFilters({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="search the water..."
-          className="type-label h-16 w-full rounded-input border border-line bg-surface-2 pr-5 pl-16 text-ink outline-none placeholder:text-ink-soft"
+          className="type-input h-16 w-full rounded-input border border-line bg-surface-2 pr-5 pl-16 text-ink outline-none placeholder:text-ink-soft"
         />
       </label>
       <div className="flex flex-wrap gap-3">

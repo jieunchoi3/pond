@@ -66,7 +66,7 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
       >
         <div className="mx-auto flex h-full w-full max-w-(--page-max) flex-col">
           <div className="mb-4 flex items-center justify-between gap-4">
-            <p className="type-caption">new spark</p>
+            <p className="type-label text-ink-soft">new spark</p>
             <button
               type="button"
               onClick={() => {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inria_Serif, JetBrains_Mono } from "next/font/google";
+import { Indie_Flower, Inria_Serif, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const inria = Inria_Serif({
@@ -9,11 +10,25 @@ const inria = Inria_Serif({
   display: "swap",
 });
 
-const jetbrains = JetBrains_Mono({
+const indie = Indie_Flower({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-indie",
+  display: "swap",
+});
+
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400"],
-  variable: "--font-jetbrains",
+  variable: "--font-inter",
   display: "swap",
+});
+
+const fortyTwoDot = localFont({
+  src: "./fonts/42dot-sans.woff2",
+  variable: "--font-42dot",
+  display: "swap",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko"
-      className={`${inria.variable} ${jetbrains.variable} h-full antialiased`}
+      className={`${inria.variable} ${indie.variable} ${inter.variable} ${fortyTwoDot.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-water-1 font-sans text-ink">{children}</body>
     </html>

@@ -25,11 +25,11 @@ export function NoteList({ notes }: NoteListProps) {
     <ul className="flex flex-col gap-4">
       {notes.map((note) => (
         <li key={note.id} className="rounded-card bg-surface-2 p-4">
-          <p className="type-title">{note.title || "Untitled spark"}</p>
+          <p className="type-note-title">{note.title || "Untitled spark"}</p>
           {note.body ? (
             <p className="type-body mt-2 text-ink-soft">{note.body}</p>
           ) : null}
-          <p className="type-caption mt-3">
+          <p className="type-label mt-3 text-ink-soft">
             {note.cat}
             {" · "}
             {formatWhen(note.created_at)}

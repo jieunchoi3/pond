@@ -2,6 +2,8 @@
 
 Audit of `filmmee` Figma (nodes 847:1086, 850:1522) and the corrected token set.
 
+**Figma = layout, spacing, hierarchy, assets. This file = colour, type, radius, shadow. If they disagree, this file wins.**
+
 ---
 
 ## Part 1 — What's inconsistent in the Figma
@@ -63,31 +65,38 @@ One chip ("ai art") is `#444` while the others are pure black. That reads as an 
 
 ### The Korean problem
 
-**Indie Flower has no Korean glyphs.** You'll write notes in Korean, and every Korean note will silently fall back to a system font — so half your notes look like a different app. Inter and Inria Serif have the same gap.
+**Indie Flower, Inter and Inria Serif have no Korean glyphs.** You're keeping all four Figma fonts, which is fine — but Korean text in them falls back to whatever the browser picks, and right now that's Roboto. Fix it by making 42dot Sans (which does have Korean, and is already in your file) the explicit fallback in every stack. Korean then renders in a font you chose, not a random system one.
 
 ---
 
 ## Part 2 — Corrected tokens
 
-### Type — two families
+### Type — the four Figma fonts, kept
+
+All four are on Google Fonts. 42dot Sans is the Korean fallback in every stack, so Korean never lands on a browser default.
 
 ```css
---font-display: 'Inria Serif', Georgia, serif;   /* headings only */
---font-body: 'Pretendard', system-ui, sans-serif; /* everything else, Korean-safe */
---font-mono: 'JetBrains Mono', monospace;         /* day counts only */
+--font-display: 'Inria Serif', '42dot Sans', Georgia, serif;  /* headings, card text */
+--font-hand:    'Indie Flower', '42dot Sans', cursive;        /* note title + body */
+--font-ui:      'Inter', '42dot Sans', system-ui, sans-serif; /* chips, buttons */
+--font-input:   '42dot Sans', system-ui, sans-serif;          /* search, inputs */
 ```
 
-Keep Inria Serif — the serif suits the koi concept. Replace Inter, 42dot Sans and Indie Flower with Pretendard (free, best Korean/Latin pairing available). Drop Impact.
+Drop Impact and Plus Jakarta Sans — they're defined in the Styles panel but used nowhere.
 
-| Token | Size / weight | Used for |
-|---|---|---|
-| `display` | 28px / 300 / serif | "Catch of the day" |
-| `title` | 20px / 400 / serif | Note title, card titles |
-| `body` | 16px / 400 | Note body, card body |
-| `label` | 14px / 400 | Chips, buttons, search |
-| `caption` | 12px / 400 / mono | "43d untouched", metadata |
+| Token | Size / weight | Family | Used for |
+|---|---|---|---|
+| `display` | 28px / 300 | `--font-display` | "Catch of the day" |
+| `card-title` | 20px / 400 | `--font-display` | Catch card titles |
+| `note-title` | 24px / 400 | `--font-hand` | Note title |
+| `body` | 16px / 400 | `--font-hand` | Note body |
+| `card-body` | 14px / 400 | `--font-display` | Catch card body |
+| `label` | 14px / 400 | `--font-ui` | Chips, buttons |
+| `input` | 16px / 400 | `--font-input` | Search field |
 
-Card title at `title`, card body at `body` in `--ink-soft`. That one change fixes the flat cards.
+The families are exactly yours. The **sizes** are the fix — in the Figma nearly everything is 18px, so a card title and its body look identical. Card title at 20px and card body at 14px in `--ink-soft` is what separates them.
+
+Metadata such as “43d untouched” uses `label` at `--ink-soft`. There is no caption / mono token.
 
 ### Colour
 
@@ -151,28 +160,7 @@ The fish PNGs are real image fills in the file (`image 365`, `366`, `370`, `373`
 1. **Remove the white fringing** on the cut-outs — visible on the red and pink fish. Re-mask, or the halo will show against the water on every screen.
 2. Name them by species, not `image 373`: `koi-white.png`, `goldfish-orange.png`, `tang-blue.png`, `betta-lilac.png`.
 
-Category decides species: **ai art → koi**, **vibe coding → tang / carp**, **music → betta / goldfish**. Size = neglect, capped at 90 days / 1.2×. Three depth layers: back fish are smaller, more transparent, blurred, and slower.
-
-Fish PNGs in `/public/fish/` are 2× cut-outs from the filmmee pond frame (`847:1086`).
-
----
-
-## Product rules
-
-These override any older spec:
-
-- Fish **size = neglect** (days since `acted_at`), not age. Cap at 90 days / 1.2×.
-- A note is **title + body + board** (`blocks` jsonb). One note type.
-- Figma is for layout, spacing, hierarchy and assets. Colours, fonts, sizes, radii and shadows come from this file. If they disagree, this file wins.
-
-Figma file `fXEzUMLn0cfW83m2YUoOoZ` (filmmee):
-
-| Screen | Node |
-|---|---|
-| Pond + catch of the day | `847:1086` |
-| Pond, no catch panel | `850:1147` |
-| Note editor, filled | `850:1522` |
-| Note editor, empty | `850:1439` |
+The build uses directional pairs: `{species}-left.png` / `{species}-right.png`.
 
 ---
 
@@ -188,3 +176,16 @@ Figma file `fXEzUMLn0cfW83m2YUoOoZ` (filmmee):
 | Frame 1386 | `CaptureButton` |
 | Frame 1403 / 1406 | `NoteEditor` |
 | Frame 1406 (inner) | `EditorToolbar` |
+
+---
+
+## Product rules (not in the Figma)
+
+- One note type: title + body + board.
+- Size = neglect (days since `acted_at`), cap 90 days / 1.2×.
+- Catch of the day: 3 most-neglected notes, 7+ days.
+- Figma file: `https://www.figma.com/design/fXEzUMLn0cfW83m2YUoOoZ/filmmee`
+  - Pond + catch: `847:1086`
+  - Pond only: `850:1147`
+  - Editor filled: `850:1522`
+  - Editor empty: `850:1439`
