@@ -7,6 +7,7 @@ import {
   type CaptureSheetHandle,
 } from "@/components/capture/CaptureSheet";
 import { CatchOfTheDay } from "@/components/pond/CatchOfTheDay";
+import { CategoryBoard } from "@/components/pond/CategoryBoard";
 import { CategorySidebar } from "@/components/pond/CategorySidebar";
 import { NoteEditor } from "@/components/pond/NoteEditor";
 import { PondCanvas } from "@/components/pond/PondCanvas";
@@ -15,6 +16,7 @@ import {
   type FilterTag,
 } from "@/components/pond/SearchAndFilters";
 import { matchesQuery } from "@/lib/notes/fish";
+import { dropPin, togglePin, usePinnedIds } from "@/lib/notes/pins";
 import {
   addNote,
   deleteNote,
@@ -38,6 +40,7 @@ export function PondScreen() {
     getServerNotesSnapshot,
   );
   const categories = usePondCategories();
+  const pinnedIds = usePinnedIds();
   const sheetRef = useRef<CaptureSheetHandle>(null);
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState<FilterTag>("all");
@@ -136,18 +139,27 @@ export function PondScreen() {
     if (narrow) setSidebarOpen(false);
   }
 
+  function selectCategory(next: FilterTag) {
+    setTag(next);
+    setEditingId(null);
+    if (narrow) setSidebarOpen(false);
+  }
+
   function removeNote(id: string) {
+    dropPin(id);
     deleteNote(id);
     if (editingId === id) setEditingId(null);
   }
 
-  const defaultCat =
-    selectedTag !== "all" ? selectedTag : (categories[0]?.id ?? "ai art");
+  const browsing = categories.find((item) => item.id === selectedTag) ?? null;
+  const defaultCat = browsing?.id ?? categories[0]?.id ?? "ai art";
 
   return (
     <div
       ref={rootRef}
-      className={`relative flex h-dvh overflow-hidden ${editing ? "bg-surface-2" : "bg-water-1"}`}
+      className={`relative flex h-dvh overflow-hidden ${
+        editing || browsing ? "bg-surface-2" : "bg-water-1"
+      }`}
     >
       <CategorySidebar
         open={sidebarOpen}
@@ -157,14 +169,14 @@ export function PondScreen() {
         query={query}
         narrow={narrow}
         onToggle={() => setSidebarOpen((value) => !value)}
-        onSelect={setTag}
+        onSelect={(id) => selectCategory(selectedTag === id ? "all" : id)}
         onOpenNote={openNote}
         onDeleteNote={removeNote}
       />
 
       <div
         className={`flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden ${
-          editing ? "p-3" : "gap-3 px-6 py-3"
+          editing ? "p-3" : browsing ? "" : "gap-3 px-6 py-3"
         }`}
       >
         {editing ? (
@@ -180,6 +192,20 @@ export function PondScreen() {
             onDelete={() => removeNote(editing.id)}
             onClose={() => setEditingId(null)}
           />
+        ) : browsing ? (
+          <CategoryBoard
+            category={browsing}
+            notes={notes.filter(
+              (note) =>
+                note.cat === browsing.id &&
+                matchesQuery(note.title, note.body, note.cat, query),
+            )}
+            pinnedIds={pinnedIds}
+            onOpen={openNote}
+            onDelete={removeNote}
+            onTogglePin={togglePin}
+            onCapture={openCapture}
+          />
         ) : (
           <>
             {isSupabaseConfigured() ? (
@@ -191,7 +217,7 @@ export function PondScreen() {
               tag={selectedTag}
               notes={notes}
               onQueryChange={setQuery}
-              onTagChange={setTag}
+              onTagChange={selectCategory}
               onPickNote={openNote}
             />
 
