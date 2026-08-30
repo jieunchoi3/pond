@@ -93,6 +93,9 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
   const visibleRef = useRef(visible);
   const bounds = useRef({ w: 0, h: 0 });
   const [ripples, setRipples] = useState<Ripple[]>([]);
+  const hoverId = useRef<string | null>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const [hoverTitle, setHoverTitle] = useState<string | null>(null);
 
   useEffect(() => {
     visibleRef.current = visible;
@@ -108,6 +111,10 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       image.src = src;
     }
   }, []);
+
+  useLayoutEffect(() => {
+    paintTitle();
+  }, [hoverTitle]);
 
   useLayoutEffect(() => {
     const pond = pondRef.current;
@@ -220,7 +227,7 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
         el.style.filter = filter;
         m.lastFilter = filter;
       }
-      el.style.zIndex = String(Math.round(m.k * 3));
+      el.style.zIndex = hoverId.current === (el.dataset.noteId ?? "") ? "5" : String(Math.round(m.k * 3));
       const src = m.facing === "left" ? m.left : m.right;
       if (img && m.lastSrc !== src) {
         img.src = src;
@@ -248,6 +255,7 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       }
       paint(m, el, imgs.current[note.id] ?? null, last, reduce);
     });
+    paintTitle();
 
     const observer = new ResizeObserver(() => {
       const prev = bounds.current;
@@ -324,6 +332,7 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
 
         paint(m, el, imgs.current[note.id] ?? null, t, reduce);
       }
+      paintTitle();
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -334,6 +343,46 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       motionQuery.removeEventListener("change", onMotion);
     };
   }, [shown, fishRev]);
+
+  function paintTitle() {
+    const pop = titleRef.current;
+    const pond = pondRef.current;
+    const id = hoverId.current;
+    if (!pop || !pond) return;
+    if (!id) {
+      pop.dataset.open = "false";
+      return;
+    }
+    const el = nodes.current[id];
+    if (!el) {
+      pop.dataset.open = "false";
+      return;
+    }
+    const pondBox = pond.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    const cx = box.left - pondBox.left + box.width / 2;
+    const gap = 10;
+    const popH = pop.offsetHeight || 40;
+    const above = box.top - pondBox.top - gap;
+    const below = box.bottom - pondBox.top + gap;
+    const placeBelow = above - popH < 8;
+    pop.dataset.open = "true";
+    pop.style.transform = placeBelow
+      ? `translate3d(${cx}px, ${below}px, 0) translate(-50%, 0)`
+      : `translate3d(${cx}px, ${above}px, 0) translate(-50%, -100%)`;
+  }
+
+  function showTitle(note: Note) {
+    hoverId.current = note.id;
+    setHoverTitle(note.title.trim() || "Untitled spark");
+  }
+
+  function hideTitle(id: string) {
+    if (hoverId.current !== id) return;
+    hoverId.current = null;
+    setHoverTitle(null);
+    paintTitle();
+  }
 
   function tapWater(event: MouseEvent<HTMLDivElement>) {
     const pond = pondRef.current;
@@ -375,6 +424,14 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
               width: fish.width,
               pointerEvents: dim ? "none" : "auto",
             }}
+            onPointerEnter={() => {
+              if (!dim) showTitle(note);
+            }}
+            onPointerLeave={() => hideTitle(note.id)}
+            onFocus={() => {
+              if (!dim) showTitle(note);
+            }}
+            onBlur={() => hideTitle(note.id)}
             onClick={(event) => {
               event.stopPropagation();
               if (!dim) onOpen(note.id);
@@ -400,6 +457,14 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
           </button>
         );
       })}
+      <div
+        ref={titleRef}
+        className="pond-fish-title type-note-title shadow-pond-sm"
+        data-open="false"
+        aria-hidden={hoverTitle ? undefined : true}
+      >
+        {hoverTitle}
+      </div>
       <CaptureButton
         className="absolute right-6 bottom-6 z-10"
         onClick={(event) => {
