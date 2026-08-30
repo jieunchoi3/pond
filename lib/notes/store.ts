@@ -38,6 +38,101 @@ export function subscribeNotes(onStoreChange: () => void) {
   };
 }
 
+function daysAgo(days: number) {
+  return new Date(Date.now() - days * 86_400_000).toISOString();
+}
+
+const SEED: Note[] = [
+  {
+    id: "seed-bubble",
+    user_id: null,
+    cat: "ai art",
+    title: "Bubble dream",
+    body: "A girl walking through a city of soap bubbles, wearing a bright white shirt with a dotted collar.",
+    blocks: [],
+    created_at: daysAgo(14),
+    acted_at: daysAgo(2),
+    pending: false,
+  },
+  {
+    id: "seed-commit",
+    user_id: null,
+    cat: "vibe coding",
+    title: "First commit of the day",
+    body: "Ship the pond layout before noon. Pretendard for Korean, Inria for the titles.",
+    blocks: [],
+    created_at: daysAgo(6),
+    acted_at: daysAgo(1),
+    pending: false,
+  },
+  {
+    id: "seed-melody",
+    user_id: null,
+    cat: "music",
+    title: "새벽 멜로디",
+    body: "창문을 열어두면 멀리서 기타가 들린다. 그 음을 메모해 두고 밤에 다시 켠다.",
+    blocks: [],
+    created_at: daysAgo(9),
+    acted_at: daysAgo(5),
+    pending: false,
+  },
+  {
+    id: "seed-question",
+    user_id: null,
+    cat: "vibe coding",
+    title: "연못에 던진 질문",
+    body: "아이디어가 가라앉기 전에 던져 넣기. 고기가 되면 나중에 건져 올린다.",
+    blocks: [],
+    created_at: daysAgo(20),
+    acted_at: daysAgo(12),
+    pending: false,
+  },
+  {
+    id: "seed-recast",
+    user_id: null,
+    cat: "ai art",
+    title: "Koi sketch, recast",
+    body: "Last week’s vermilion koi, redrawn without the sticker shadow. Keep the white body; let it sit in the water.",
+    blocks: [],
+    created_at: daysAgo(10),
+    acted_at: daysAgo(0),
+    pending: false,
+  },
+  {
+    id: "seed-blush",
+    user_id: null,
+    cat: "ai art",
+    title: "분홍 비늘",
+    body: "연못 가장자리에 분홍 잉어가 머문다. 아직 제목도 없는 스케치.",
+    blocks: [],
+    created_at: daysAgo(28),
+    acted_at: daysAgo(21),
+    pending: false,
+  },
+  {
+    id: "seed-loop",
+    user_id: null,
+    cat: "music",
+    title: "Three-color loop",
+    body: "A bass line that never resolves. Leave it swimming until Friday.",
+    blocks: [],
+    created_at: daysAgo(50),
+    acted_at: daysAgo(43),
+    pending: false,
+  },
+  {
+    id: "seed-honey",
+    user_id: null,
+    cat: "vibe coding",
+    title: "Honey hour",
+    body: "Late light on the water. A small carp, a smaller task: write one sentence and stop.",
+    blocks: [],
+    created_at: daysAgo(16),
+    acted_at: daysAgo(8),
+    pending: false,
+  },
+];
+
 function isNote(value: unknown): value is Note {
   if (!value || typeof value !== "object") return false;
   const note = value as Partial<Note>;
@@ -52,14 +147,24 @@ function isNote(value: unknown): value is Note {
 export function getNotesSnapshot(): Note[] {
   if (!hydrated && typeof window !== "undefined") {
     const stored = readJson<unknown>(NOTES_KEY, []);
-    snapshot = Array.isArray(stored) ? stored.filter(isNote) : [];
+    const valid = Array.isArray(stored) ? stored.filter(isNote) : [];
+    snapshot = valid.length > 0 ? valid : SEED;
+    if (valid.length === 0) {
+      window.localStorage.setItem(NOTES_KEY, JSON.stringify(SEED));
+    }
     hydrated = true;
   }
   return snapshot;
 }
 
 export function getServerNotesSnapshot(): Note[] {
-  return [];
+  return SEED;
+}
+
+function isBlock(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const block = value as { type?: string };
+  return block.type === "image" || block.type === "youtube" || block.type === "audio";
 }
 
 export function isCat(value: string): value is Cat {
@@ -95,6 +200,25 @@ export function addNote(input: { cat: Cat; text: string; userId: string | null }
     void syncNote(note);
   });
   return note;
+}
+
+export function patchNote(id: string, patch: Partial<Pick<Note, "title" | "body" | "cat" | "blocks">>) {
+  const now = new Date().toISOString();
+  persist(
+    getNotesSnapshot().map((note) =>
+      note.id === id ? { ...note, ...patch, acted_at: now, pending: true } : note,
+    ),
+  );
+  const next = getNotesSnapshot().find((note) => note.id === id);
+  if (next) {
+    queueMicrotask(() => {
+      void syncNote(next);
+    });
+  }
+}
+
+export function recastNote(id: string) {
+  patchNote(id, {});
 }
 
 export function mergeRemote(rows: Note[]) {
@@ -195,7 +319,7 @@ export async function pullNotes() {
       .map((row) => ({
         ...row,
         cat: row.cat as Cat,
-        blocks: Array.isArray(row.blocks) ? row.blocks : [],
+        blocks: Array.isArray(row.blocks) ? row.blocks.filter(isBlock) as Note["blocks"] : [],
         pending: false,
       })),
   );

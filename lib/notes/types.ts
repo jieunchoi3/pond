@@ -2,7 +2,10 @@ export const CATS = ["ai art", "vibe coding", "music"] as const;
 
 export type Cat = (typeof CATS)[number];
 
-export type NoteBlock = Record<string, unknown>;
+export type NoteBlock =
+  | { id: string; type: "image"; src: string }
+  | { id: string; type: "youtube"; url: string }
+  | { id: string; type: "audio"; label: string };
 
 export type Note = {
   id: string;

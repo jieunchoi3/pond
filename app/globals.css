@@ -209,3 +209,36 @@
   line-height: 1.4;
   color: var(--ink-soft);
 }
+
+.pond-water {
+  background-color: var(--water-2);
+  background-image:
+    radial-gradient(ellipse 70% 50% at 18% 28%, var(--water-1) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 82% 72%, var(--water-3) 0%, transparent 50%),
+    linear-gradient(180deg, var(--water-1) 0%, var(--water-2) 52%, var(--water-3) 100%);
+}
+
+.pond-fish {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  will-change: transform;
+  filter: drop-shadow(var(--shadow-sm));
+}
+
+.pond-fish img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.editor-split {
+  touch-action: none;
+}
