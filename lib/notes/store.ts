@@ -29,6 +29,7 @@ function readJson<T>(key: string, fallback: T): T {
 
 function persist(notes: Note[], sync = true) {
   snapshot = notes;
+  if (typeof window === "undefined") return;
   window.localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
   emit();
   if (sync) requestSync();
@@ -301,4 +302,5 @@ export function deleteNote(id: string) {
 
 export function applyRemoteNotes(notes: Note[]) {
   persist(notes, false);
+  hydrated = true;
 }

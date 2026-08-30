@@ -13,6 +13,14 @@ import type { Note, PondCategory } from "@/lib/notes/types";
 
 const STATE_ID = "default";
 
+export type PondCloudPayload = {
+  notes: Note[];
+  categories: PondCategory[];
+  pins: string[];
+  ready: boolean;
+  updated_at: string;
+};
+
 type PondStateRow = {
   id: string;
   notes: unknown;
@@ -24,6 +32,7 @@ type PondStateRow = {
 
 let cloudReady = false;
 let applying = false;
+let booted = false;
 let pushTimer: number | null = null;
 let lastPushAt = 0;
 
@@ -61,6 +70,16 @@ function parsePins(value: unknown): string[] {
   return value.filter((id): id is string => typeof id === "string" && id.length > 0);
 }
 
+export function payloadFromRow(row: PondStateRow): PondCloudPayload {
+  return {
+    notes: parseNotes(row.notes),
+    categories: parseCategories(row.categories),
+    pins: parsePins(row.pins),
+    ready: row.ready,
+    updated_at: row.updated_at,
+  };
+}
+
 function snapshotPayload() {
   return {
     id: STATE_ID,
@@ -70,6 +89,26 @@ function snapshotPayload() {
     ready: true,
     updated_at: new Date().toISOString(),
   };
+}
+
+function applyPayload(payload: PondCloudPayload) {
+  applying = true;
+  try {
+    applyRemoteNotes(payload.notes);
+    applyRemoteCategories(payload.categories);
+    applyRemotePins(payload.pins);
+  } finally {
+    applying = false;
+  }
+}
+
+export function installCloudBoot(payload: PondCloudPayload | null) {
+  if (booted) return;
+  if (!payload) return;
+  if (!payload.ready && payload.notes.length === 0) return;
+  booted = true;
+  applyPayload(payload);
+  lastPushAt = Date.parse(payload.updated_at) || Date.now();
 }
 
 export function schedulePondSync() {
@@ -86,7 +125,7 @@ async function pushPondState() {
   const supabase = createClient();
   if (!supabase) return;
   const payload = snapshotPayload();
-  const { error } = await supabase.from("pond_state").upsert(payload);
+  const { error } = await supabase.from("pond_state").upsert(payload, { onConflict: "id" });
   if (error) {
     console.warn("pond sync failed", error.message);
     return;
@@ -94,27 +133,24 @@ async function pushPondState() {
   lastPushAt = Date.parse(payload.updated_at);
 }
 
-async function readRemote(): Promise<PondStateRow | null> {
+async function readRemote(): Promise<PondStateRow | null | "error"> {
   const supabase = createClient();
-  if (!supabase) return null;
+  if (!supabase) return "error";
   const { data, error } = await supabase
     .from("pond_state")
     .select("id, notes, categories, pins, ready, updated_at")
     .eq("id", STATE_ID)
     .maybeSingle();
-  if (error || !data) return null;
-  return data as PondStateRow;
+  if (error) return "error";
+  return (data as PondStateRow | null) ?? null;
 }
 
-function applyRow(row: PondStateRow) {
-  applying = true;
-  try {
-    applyRemoteNotes(parseNotes(row.notes));
-    applyRemoteCategories(parseCategories(row.categories));
-    applyRemotePins(parsePins(row.pins));
-  } finally {
-    applying = false;
-  }
+export async function loadPondState(): Promise<PondCloudPayload | null> {
+  const row = await readRemote();
+  if (!row || row === "error") return null;
+  const payload = payloadFromRow(row);
+  if (!payload.ready && payload.notes.length === 0) return null;
+  return payload;
 }
 
 export async function hydratePond() {
@@ -123,11 +159,18 @@ export async function hydratePond() {
     return;
   }
   const remote = await readRemote();
-  if (remote?.ready) {
-    applyRow(remote);
-    lastPushAt = Date.parse(remote.updated_at) || Date.now();
+  if (remote === "error") {
     cloudReady = true;
     return;
+  }
+  if (remote) {
+    const payload = payloadFromRow(remote);
+    if (payload.ready || payload.notes.length > 0) {
+      applyPayload(payload);
+      lastPushAt = Date.parse(payload.updated_at) || Date.now();
+      cloudReady = true;
+      return;
+    }
   }
   cloudReady = true;
   await pushPondState();
@@ -136,9 +179,11 @@ export async function hydratePond() {
 export async function refreshPondFromCloud() {
   if (!cloudReady || applying) return;
   const remote = await readRemote();
-  if (!remote?.ready) return;
-  const remoteAt = Date.parse(remote.updated_at) || 0;
+  if (!remote || remote === "error") return;
+  const payload = payloadFromRow(remote);
+  if (!payload.ready && payload.notes.length === 0) return;
+  const remoteAt = Date.parse(payload.updated_at) || 0;
   if (remoteAt <= lastPushAt) return;
-  applyRow(remote);
+  applyPayload(payload);
   lastPushAt = remoteAt;
 }

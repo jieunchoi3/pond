@@ -26,14 +26,16 @@ import {
   recastNote,
   subscribeNotes,
 } from "@/lib/notes/store";
-import { hydratePond, refreshPondFromCloud } from "@/lib/notes/sync";
+import { hydratePond, installCloudBoot, refreshPondFromCloud } from "@/lib/notes/sync";
+import type { PondCloudPayload } from "@/lib/notes/sync";
 import { usePondCategories } from "@/lib/notes/categories";
 
-export function PondScreen() {
+export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
+  installCloudBoot(initial);
   const notes = useSyncExternalStore(
     subscribeNotes,
     getNotesSnapshot,
-    getServerNotesSnapshot,
+    () => initial?.notes ?? getServerNotesSnapshot(),
   );
   const categories = usePondCategories();
   const pinnedIds = usePinnedIds();

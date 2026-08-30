@@ -28,6 +28,7 @@ function read(): string[] {
 
 function persist(next: string[], sync = true) {
   snapshot = next;
+  if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(next));
   emit();
   if (sync) {
@@ -76,4 +77,5 @@ export function dropPin(id: string) {
 
 export function applyRemotePins(next: string[]) {
   persist(next, false);
+  hydrated = true;
 }

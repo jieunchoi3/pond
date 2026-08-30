@@ -42,6 +42,7 @@ function isPondCategory(value: unknown): value is PondCategory {
 
 function persist(next: PondCategory[], sync = true) {
   snapshot = next;
+  if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, JSON.stringify(next));
   emit();
   if (sync) {
@@ -131,6 +132,7 @@ export function setCategoryFish(id: string, fishKey: string) {
 export function applyRemoteCategories(next: PondCategory[]) {
   if (next.length === 0) return;
   persist(next, false);
+  hydrated = true;
 }
 
 export function deleteCategory(id: string): PondCategory | null {
