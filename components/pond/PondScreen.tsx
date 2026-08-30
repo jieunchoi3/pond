@@ -7,13 +7,14 @@ import {
   type CaptureSheetHandle,
 } from "@/components/capture/CaptureSheet";
 import { CatchOfTheDay } from "@/components/pond/CatchOfTheDay";
+import { LilyTab } from "@/components/pond/LilyPads";
 import { NoteEditor } from "@/components/pond/NoteEditor";
 import { PondCanvas } from "@/components/pond/PondCanvas";
 import {
   SearchAndFilters,
   type FilterTag,
 } from "@/components/pond/SearchAndFilters";
-import { catchOfTheDay, matchesQuery } from "@/lib/notes/fish";
+import { matchesQuery } from "@/lib/notes/fish";
 import {
   addNote,
   deleteNote,
@@ -38,7 +39,7 @@ export function PondScreen() {
   const sheetRef = useRef<CaptureSheetHandle>(null);
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState<FilterTag>("all");
-  const [canvasMode, setCanvasMode] = useState(false);
+  const [showCatch, setShowCatch] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
 
@@ -111,23 +112,12 @@ export function PondScreen() {
   }
 
   return (
-    <div ref={rootRef} className="relative flex min-h-dvh flex-col bg-water-1">
-      <div className="mx-auto flex min-h-dvh w-full max-w-(--page-max) flex-col px-6 py-6">
-        <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => setCanvasMode((value) => !value)}
-            aria-pressed={canvasMode}
-            className="type-label rounded-pill border border-line px-4 py-2 text-ink"
-          >
-            canvas mode
-          </button>
-        </div>
+    <div ref={rootRef} className="relative flex h-dvh flex-col overflow-hidden bg-water-1">
+      <LilyTab open={showCatch} onToggle={() => setShowCatch((value) => !value)} />
 
+      <div className="mx-auto flex min-h-0 w-full max-w-(--page-max) flex-1 flex-col gap-4 overflow-hidden px-6 py-4">
         {isSupabaseConfigured() ? (
-          <div className="mb-4">
-            <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
-          </div>
+          <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
         ) : null}
 
         <SearchAndFilters
@@ -137,25 +127,12 @@ export function PondScreen() {
           onTagChange={setTag}
         />
 
-        {canvasMode ? null : (
-          <div className="mt-6">
-            <CatchOfTheDay
-              notes={visibleNotes}
-              onOpen={setEditingId}
-              onRecast={recastNote}
-            />
-          </div>
-        )}
+        {showCatch ? (
+          <CatchOfTheDay notes={visibleNotes} onOpen={setEditingId} onRecast={recastNote} />
+        ) : null}
 
-        <div className="mt-6 min-h-0 flex-1">
-          <PondCanvas
-            notes={notes}
-            visible={visibleIds}
-            canvasMode={canvasMode}
-            onOpen={setEditingId}
-            onRecast={() => catchOfTheDay(visibleNotes).forEach((note) => recastNote(note.id))}
-            onCapture={openCapture}
-          />
+        <div className="min-h-0 flex-1">
+          <PondCanvas notes={notes} visible={visibleIds} onOpen={setEditingId} onCapture={openCapture} />
         </div>
       </div>
 
@@ -184,4 +161,3 @@ export function PondScreen() {
     </div>
   );
 }
-

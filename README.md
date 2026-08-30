@@ -2,9 +2,16 @@
 
 A koi pond for sparks — notes you throw in the water and fish out later.
 
-Tokens live in [`DESIGN.md`](./DESIGN.md). Figma is for layout, spacing, hierarchy and assets. Colours, fonts, sizes, radii and shadows always come from that file.
+Figma is for **layout, spacing, hierarchy, and assets**. Colours, fonts, sizes, radii, and shadows always come from [`DESIGN.md`](./DESIGN.md). If they disagree, DESIGN.md wins.
 
-The filmmee file (`fXEzUMLn0cfW83m2YUoOoZ`) is the layout source: pond + catch (`847:1086`), capture (`845:1232`), editor empty (`850:1494`), editor filled (`850:1522`). Figma MCP cannot authenticate in this cloud session; the screens are implemented from that file’s structure plus `pond-prototype.jsx`.
+Layout source: filmmee file `fXEzUMLn0cfW83m2YUoOoZ`
+
+| Screen | Node |
+|---|---|
+| Pond + catch of the day | `847:1086` |
+| Pond, no catch panel | `850:1147` |
+| Note editor, filled | `850:1522` |
+| Note editor, empty | `850:1439` |
 
 ## Run
 
@@ -18,13 +25,13 @@ Open [http://localhost:43217](http://localhost:43217).
 
 ## What’s on screen
 
-- **Search + chips** — `search the water…`, ALL plus four species chips (selected = vermilion)
-- **Catch of the day** — notes idle ≥ 7 days; recast reshuffles, it does not mark them acted
-- **Pond** — SVG fish, size = neglect (cap 90 days), three depth layers, wraparound swim, lily pads. Filtered fish stay dim. Tap the water to recast. FAB lives in the pond.
-- **Capture** — always-mounted bottom sheet. Tap + focuses the textarea on the same gesture. **Open it** saves and opens the editor; **Release** saves only.
-- **Editor** — title, body, dotted board with floating cards. **Acted on it** resets neglect. **Release** deletes the note.
+- **Search + chips** — `search the water...`, then ALL / ai art / vibe coding / music. Selected chip uses the vermilion accent.
+- **Catch of the day** — white card with the three most-neglected notes (≥ 7 days). Recast marks them acted (throws them back). The left lily tab hides the panel so the pond fills the rest of the screen.
+- **Pond** — water gradient, Figma PNG fish, size = neglect (cap 90 days / 1.2×), three depth layers, rAF drift. Filtered-out fish stay dim. One 72px accent FAB in the pond.
+- **Capture** — always-mounted full-screen sheet. Tap + focuses the textarea on the same gesture (target: under 400ms). **Open it** saves and opens the editor; **Release** saves only.
+- **Editor** — title, body, canvas-mode toolbar (mic / image / YouTube + expand), dotted board with floating cards. **Acted on it** resets neglect. **Release** deletes the note.
 
-`pond-prototype.jsx` is product/animation reference only. Do not import it.
+`pond-prototype.jsx` is animation reference only. Do not import it.
 
 ## Supabase
 

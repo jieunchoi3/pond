@@ -14,32 +14,27 @@ export function CatchOfTheDay({ notes, onOpen, onRecast }: CatchOfTheDayProps) {
   const daily = catchOfTheDay(notes);
 
   return (
-    <section>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h2 className="type-display">Catch of the day</h2>
+    <section className="w-full overflow-hidden rounded-card bg-surface shadow-pond-sm">
+      <div className="flex items-center gap-3 border-b border-line px-5 py-3">
+        <h2 className="type-display min-w-0 flex-1">Catch of the day</h2>
         {daily.length > 0 ? (
           <button
             type="button"
             onClick={() => daily.forEach((note) => onRecast(note.id))}
-            className="type-label rounded-pill bg-accent-soft px-4 py-2 text-ink"
+            className="type-label h-12 shrink-0 rounded-pill bg-accent-soft px-5 text-ink"
           >
             recast
           </button>
         ) : null}
       </div>
       {daily.length === 0 ? (
-        <p className="type-body text-ink-soft">
+        <p className="type-body px-5 py-6 text-ink-soft">
           Nothing older than {CATCH_MIN_DAYS} days. Let a spark sit, then recast it.
         </p>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 p-4">
           {daily.map((note) => (
-            <CatchCard
-              key={note.id}
-              note={note}
-              onOpen={() => onOpen(note.id)}
-              onRecast={() => onRecast(note.id)}
-            />
+            <CatchCard key={note.id} note={note} onOpen={() => onOpen(note.id)} />
           ))}
         </div>
       )}

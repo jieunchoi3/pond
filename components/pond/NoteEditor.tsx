@@ -82,7 +82,7 @@ export function NoteEditor({
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-surface">
-      <header className="flex items-center justify-between gap-3 border-b border-line bg-water-1 px-6 py-3.5">
+      <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3.5">
         <div className="flex items-center gap-2">
           <Fish cat={note.cat} id={note.id} scale={0.45} />
           <span className="type-caption tracking-[0.08em]">
@@ -111,29 +111,26 @@ export function NoteEditor({
       </header>
 
       <div ref={wrapRef} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="overflow-auto px-6 pt-5" style={{ height: `${split * 100}%` }}>
+        <div className="flex flex-col overflow-auto px-6 pt-5" style={{ height: `${split * 100}%` }}>
           <input
             value={note.title}
             onChange={(event) => onChange({ title: event.target.value })}
             placeholder="Add your original spark"
-            className="type-title w-full bg-transparent text-ink outline-none placeholder:text-ink-soft"
+            className="type-title w-full border-b border-line bg-transparent py-3 text-ink outline-none placeholder:text-ink-soft"
           />
           <textarea
             value={note.body}
             onChange={(event) => onChange({ body: event.target.value })}
             placeholder="add your ideas…"
-            className="type-body mt-2.5 h-[78%] w-full resize-none bg-transparent text-ink outline-none placeholder:text-ink-soft"
+            className="type-body mt-1 min-h-0 w-full flex-1 resize-none border-b border-line bg-transparent py-3 text-ink outline-none placeholder:text-ink-soft"
           />
         </div>
 
         <div
           onPointerDown={startDivider}
-          className="editor-split flex cursor-row-resize select-none items-center gap-2 border-y border-line bg-water-1 px-6 py-2"
+          className="editor-split flex cursor-row-resize select-none items-center gap-3 border-y border-line bg-surface px-6 py-2"
         >
-          <span className="h-1 w-8 rounded-pill bg-ink/18" />
-          <span className="type-caption mr-auto tracking-[0.08em]">
-            BOARD{narrow ? "" : " · DRAG TO ARRANGE"}
-          </span>
+          <span className="h-1 w-8 shrink-0 rounded-pill bg-ink/18" />
           <EditorToolbar
             onAdd={add}
             onExpand={() => setSplit(split > 0.3 ? 0.14 : 0.5)}

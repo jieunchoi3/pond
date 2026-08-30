@@ -3,16 +3,13 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { CaptureButton } from "@/components/capture/CaptureButton";
 import { Fish } from "@/components/pond/Fish";
-import { LilyPads } from "@/components/pond/LilyPads";
 import { fishFor, hasBoard, layerOf, neglectScale, sampleFish } from "@/lib/notes/fish";
 import type { Note } from "@/lib/notes/types";
 
 type PondCanvasProps = {
   notes: Note[];
   visible: Set<string>;
-  canvasMode: boolean;
   onOpen: (id: string) => void;
-  onRecast: () => void;
   onCapture: () => void;
 };
 
@@ -29,14 +26,7 @@ type Motion = {
 
 type Ripple = { id: number; x: number; y: number };
 
-export function PondCanvas({
-  notes,
-  visible,
-  canvasMode,
-  onOpen,
-  onRecast,
-  onCapture,
-}: PondCanvasProps) {
+export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProps) {
   const pondRef = useRef<HTMLDivElement>(null);
   const nodes = useRef<Record<string, HTMLButtonElement | null>>({});
   const motion = useRef<Record<string, Motion>>({});
@@ -66,7 +56,8 @@ export function PondCanvas({
       const m = motion.current[id];
       const el = nodes.current[id];
       if (!m || !el) return;
-      el.style.transform = `translate3d(${m.x}%, ${y}%, 0) scale(${m.scale})`;
+      const face = m.vx < 0 ? m.scale : -m.scale;
+      el.style.transform = `translate3d(${m.x}%, ${y}%, 0) scale(${face}, ${m.scale})`;
       el.style.opacity = String(m.opacity);
       el.style.filter = m.blur
         ? `drop-shadow(var(--shadow-sm)) blur(${m.blur}px)`
@@ -107,22 +98,18 @@ export function PondCanvas({
     window.setTimeout(() => {
       setRipples((list) => list.filter((ripple) => ripple.id !== id));
     }, 900);
-    onRecast();
   }
 
   return (
     <div
       ref={pondRef}
       onClick={tapWater}
-      className={`pond-water relative overflow-hidden rounded-card ${
-        canvasMode ? "min-h-[min(72vh,720px)] flex-1" : "min-h-[280px] flex-1"
-      }`}
+      className="pond-water relative h-full min-h-[280px] overflow-hidden rounded-card"
     >
-      <LilyPads />
       {ripples.map((ripple) => (
         <span
           key={ripple.id}
-          className="pointer-events-none absolute size-14 animate-ping rounded-pill border border-surface/90"
+          className="pond-ripple pointer-events-none absolute size-14 animate-ping rounded-pill"
           style={{ left: ripple.x - 28, top: ripple.y - 28 }}
         />
       ))}

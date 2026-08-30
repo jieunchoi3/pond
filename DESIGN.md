@@ -153,7 +153,7 @@ The fish PNGs are real image fills in the file (`image 365`, `366`, `370`, `373`
 
 Category decides species: **ai art → koi**, **vibe coding → tang / carp**, **music → betta / goldfish**. Size = neglect, capped at 90 days / 1.2×. Three depth layers: back fish are smaller, more transparent, blurred, and slower.
 
-Figma MCP may be unavailable in cloud agents; use the named PNGs in `/public/fish/` until 2× exports can be swapped in.
+Fish PNGs in `/public/fish/` are 2× cut-outs from the filmmee pond frame (`847:1086`).
 
 ---
 
