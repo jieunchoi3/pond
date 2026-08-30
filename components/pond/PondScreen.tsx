@@ -139,9 +139,13 @@ export function PondScreen() {
       <CategorySidebar
         open={sidebarOpen}
         selected={selectedTag}
+        editingId={editingId}
+        notes={notes}
+        query={query}
         narrow={narrow}
         onToggle={() => setSidebarOpen((value) => !value)}
         onSelect={setTag}
+        onOpenNote={setEditingId}
       />
 
       <div className="mx-auto flex min-h-0 min-w-0 w-full max-w-(--page-max) flex-1 flex-col gap-3 overflow-hidden px-6 py-3">

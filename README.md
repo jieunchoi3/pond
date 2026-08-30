@@ -27,7 +27,7 @@ Open [http://localhost:43217](http://localhost:43217).
 
 ## What’s on screen
 
-- **Sidebar** — Frame 1319 category list. Each row is a fish + name. Click a row (or a chip) to filter. Double-click a name to rename, click the fish to pick another colour, click an empty slot to add a category. The chevron on the spine collapses the bar.
+- **Sidebar** — Frame 1319 outline: each category (fish + name) lists its notes underneath. Click a note to open it. Click a category (or a chip) to filter the pond. Double-click a name to rename, click the fish to pick another colour, click the empty slot at the bottom to add a category. The chevron on the spine collapses the bar.
 - **Search + chips** — `search the water...`, then ALL plus every category. Selected chip uses the vermilion accent. Chips stay in sync with the sidebar.
 - **Catch of the day** — white card with the three most-neglected notes (≥ 7 days). Recast marks them acted (throws them back).
 - **Pond** — water gradient, Figma PNG fish, size = neglect (cap 90 days / 1.2×), three depth layers, rAF drift. Filtered-out fish stay dim. One 72px accent FAB in the pond.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import {
   addCategory,
@@ -9,36 +9,53 @@ import {
   setCategoryFish,
   usePondCategories,
 } from "@/lib/notes/categories";
+import { FISH_SPECIES, matchesQuery, speciesOf, unusedFishKey } from "@/lib/notes/fish";
 import { patchNotesCat } from "@/lib/notes/store";
-import { FISH_SPECIES, speciesOf, unusedFishKey } from "@/lib/notes/fish";
-import type { PondCategory } from "@/lib/notes/types";
+import type { Note, PondCategory } from "@/lib/notes/types";
 
-const ROW = 56;
-const WIDTH = 260;
+const WIDTH = 280;
 
 export type FilterTag = "all" | string;
 
 type CategorySidebarProps = {
   open: boolean;
   selected: FilterTag;
+  editingId: string | null;
+  notes: Note[];
+  query: string;
   narrow: boolean;
   onToggle: () => void;
   onSelect: (tag: FilterTag) => void;
+  onOpenNote: (id: string) => void;
 };
 
 export function CategorySidebar({
   open,
   selected,
+  editingId,
+  notes,
+  query,
   narrow,
   onToggle,
   onSelect,
+  onOpenNote,
 }: CategorySidebarProps) {
   const categories = usePondCategories();
   const listRef = useRef<HTMLDivElement>(null);
-  const [slotCount, setSlotCount] = useState(8);
   const [draft, setDraft] = useState<{ name: string; fishKey: string } | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingCat, setEditingCat] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | "draft" | null>(null);
+
+  const grouped = useMemo(() => {
+    return categories.map((item) => ({
+      item,
+      notes: notes.filter(
+        (note) =>
+          note.cat === item.id &&
+          matchesQuery(note.title, note.body, note.cat, query),
+      ),
+    }));
+  }, [categories, notes, query]);
 
   useEffect(() => {
     function onPointer(event: PointerEvent) {
@@ -50,20 +67,8 @@ export function CategorySidebar({
     return () => window.removeEventListener("pointerdown", onPointer);
   }, []);
 
-  useEffect(() => {
-    const node = listRef.current;
-    if (!node) return;
-    const measure = () => {
-      setSlotCount(Math.max(categories.length + 1, Math.floor(node.clientHeight / ROW)));
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [categories.length, open, draft]);
-
   function startAdd() {
-    setEditingId(null);
+    setEditingCat(null);
     setDraft({
       name: "",
       fishKey: unusedFishKey(categories.map((item) => item.fishKey)),
@@ -79,11 +84,6 @@ export function CategorySidebar({
     onSelect(created.id);
   }
 
-  const extras = Math.max(
-    draft ? 0 : 1,
-    slotCount - categories.length - (draft ? 1 : 0),
-  );
-
   return (
     <>
       {narrow && open ? (
@@ -97,11 +97,11 @@ export function CategorySidebar({
 
       <aside
         className={`relative z-30 h-full shrink-0 bg-surface-2 transition-[width] duration-200 ${
-          open ? "w-[260px]" : "w-0"
+          open ? "w-[280px]" : "w-0"
         } ${narrow ? "absolute inset-y-0 left-0 shadow-pond-lg" : ""}`}
       >
         <div
-          className={`flex h-full flex-col overflow-hidden ${open ? "w-[260px]" : "w-0 opacity-0"}`}
+          className={`flex h-full flex-col overflow-hidden ${open ? "" : "opacity-0"}`}
           style={{ width: open ? WIDTH : 0 }}
         >
           <div className="type-label flex h-14 shrink-0 items-center border-b border-line px-5 text-ink-soft">
@@ -109,41 +109,63 @@ export function CategorySidebar({
           </div>
 
           <div ref={listRef} className="flex min-h-0 flex-1 flex-col overflow-auto">
-            {categories.map((item) => (
-              <CategoryRow
-                key={item.id}
-                item={item}
-                selected={selected === item.id}
-                editing={editingId === item.id}
-                picking={pickerFor === item.id}
-                onSelect={() => onSelect(item.id)}
-                onEdit={() => {
-                  setDraft(null);
-                  setEditingId(item.id);
-                  setPickerFor(null);
-                }}
-                onRename={(name) => {
-                  const trimmed = name.trim();
-                  if (!trimmed || trimmed === item.name) {
-                    setEditingId(null);
-                    return;
-                  }
-                  if (renameCategory(item.id, trimmed)) setEditingId(null);
-                }}
-                onCancelEdit={() => setEditingId(null)}
-                onPickFish={() => setPickerFor(pickerFor === item.id ? null : item.id)}
-                onFish={(key) => {
-                  setCategoryFish(item.id, key);
-                  setPickerFor(null);
-                }}
-                onDelete={() => {
-                  const fallback = deleteCategory(item.id);
-                  if (!fallback) return;
-                  patchNotesCat(item.id, fallback.id);
-                  if (selected === item.id) onSelect("all");
-                }}
-                canDelete={categories.length > 1}
-              />
+            {grouped.map(({ item, notes: sparks }) => (
+              <section key={item.id} className="border-b border-line">
+                <CategoryRow
+                  item={item}
+                  selected={selected === item.id}
+                  editing={editingCat === item.id}
+                  picking={pickerFor === item.id}
+                  onSelect={() => onSelect(item.id)}
+                  onEdit={() => {
+                    setDraft(null);
+                    setEditingCat(item.id);
+                    setPickerFor(null);
+                  }}
+                  onRename={(name) => {
+                    const trimmed = name.trim();
+                    if (!trimmed || trimmed === item.name) {
+                      setEditingCat(null);
+                      return;
+                    }
+                    if (renameCategory(item.id, trimmed)) setEditingCat(null);
+                  }}
+                  onCancelEdit={() => setEditingCat(null)}
+                  onPickFish={() => setPickerFor(pickerFor === item.id ? null : item.id)}
+                  onFish={(key) => {
+                    setCategoryFish(item.id, key);
+                    setPickerFor(null);
+                  }}
+                  onDelete={() => {
+                    const fallback = deleteCategory(item.id);
+                    if (!fallback) return;
+                    patchNotesCat(item.id, fallback.id);
+                    if (selected === item.id) onSelect("all");
+                  }}
+                  canDelete={categories.length > 1}
+                />
+                {sparks.length === 0 ? (
+                  <p className="type-label px-5 py-2 pl-14 text-ink-soft">no sparks yet</p>
+                ) : (
+                  sparks.map((note) => {
+                    const active = note.id === editingId;
+                    return (
+                      <button
+                        key={note.id}
+                        type="button"
+                        onClick={() => onOpenNote(note.id)}
+                        className={`type-label flex w-full items-start gap-2 px-5 py-2 pl-14 text-left ${
+                          active ? "bg-surface text-ink" : "text-ink-soft"
+                        }`}
+                      >
+                        <span className="min-w-0 flex-1 truncate">
+                          {note.title || "Untitled spark"}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </section>
             ))}
 
             {draft ? (
@@ -165,15 +187,12 @@ export function CategorySidebar({
               />
             ) : null}
 
-            {Array.from({ length: extras }).map((_, index) => (
-              <button
-                key={`empty-${index}`}
-                type="button"
-                onClick={startAdd}
-                aria-label="Add category"
-                className="h-14 shrink-0 border-b border-line"
-              />
-            ))}
+            <button
+              type="button"
+              onClick={startAdd}
+              aria-label="Add category"
+              className="min-h-14 flex-1 border-b border-line"
+            />
           </div>
         </div>
 
@@ -277,7 +296,7 @@ function CategoryRow({
 
   return (
     <div
-      className={`group relative flex h-14 shrink-0 items-center gap-3 border-b border-line px-4 ${
+      className={`group relative flex h-14 items-center gap-3 px-4 ${
         selected ? "bg-surface" : ""
       }`}
     >
