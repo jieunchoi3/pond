@@ -1,54 +1,44 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import type { BlockType } from "@/lib/notes/types";
 
 type EditorToolbarProps = {
-  expanded: boolean;
-  onMic: () => void;
-  onImage: () => void;
-  onYoutube: () => void;
+  onAdd: (type: BlockType) => void;
   onExpand: () => void;
 };
 
-const ACTIONS = [
-  { id: "mic", icon: "fluent:mic-20-regular", label: "Voice note", handler: "onMic" },
-  { id: "image", icon: "clarity:image-gallery-line", label: "Attach image", handler: "onImage" },
-  { id: "youtube", icon: "ant-design:youtube-outlined", label: "Embed YouTube", handler: "onYoutube" },
-] as const;
+const ACTIONS: { type: BlockType; icon: string; label: string }[] = [
+  { type: "voice", icon: "fluent:mic-20-regular", label: "Add voice" },
+  { type: "image", icon: "clarity:image-gallery-line", label: "Add image" },
+  { type: "video", icon: "ant-design:youtube-outlined", label: "Add video" },
+  { type: "colour", icon: "fluent:color-24-regular", label: "Add colour" },
+];
 
-export function EditorToolbar({
-  expanded,
-  onMic,
-  onImage,
-  onYoutube,
-  onExpand,
-}: EditorToolbarProps) {
-  const handlers = { onMic, onImage, onYoutube };
-
+export function EditorToolbar({ onAdd, onExpand }: EditorToolbarProps) {
   return (
-    <div className="flex items-center justify-between gap-4 py-4">
-      <div className="flex items-center gap-3">
-        {ACTIONS.map((action) => (
-          <button
-            key={action.id}
-            type="button"
-            onClick={handlers[action.handler]}
-            aria-label={action.label}
-            className="grid size-12 place-items-center rounded-pill bg-accent-soft text-ink"
-          >
-            <Icon icon={action.icon} width={20} />
-          </button>
-        ))}
-      </div>
+    <>
+      {ACTIONS.map((action) => (
+        <button
+          key={action.type}
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => onAdd(action.type)}
+          aria-label={action.label}
+          className="grid size-10 place-items-center rounded-pill bg-accent-soft text-ink"
+        >
+          <Icon icon={action.icon} width={20} />
+        </button>
+      ))}
       <button
         type="button"
+        onPointerDown={(event) => event.stopPropagation()}
         onClick={onExpand}
-        aria-pressed={expanded}
-        aria-label={expanded ? "Show board" : "Expand writing"}
-        className="grid size-12 place-items-center rounded-pill bg-surface-2 text-ink"
+        aria-label="Expand board"
+        className="grid size-10 place-items-center rounded-pill bg-surface-2 text-ink-soft"
       >
-        <Icon icon="ant-design:expand-alt-outlined" width={20} />
+        <Icon icon="ant-design:expand-alt-outlined" width={18} />
       </button>
-    </div>
+    </>
   );
 }

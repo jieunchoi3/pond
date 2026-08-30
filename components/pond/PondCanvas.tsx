@@ -1,147 +1,148 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import {
-  fishFor,
-  neglectScale,
-  sampleFish,
-} from "@/lib/notes/fish";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { CaptureButton } from "@/components/capture/CaptureButton";
+import { Fish } from "@/components/pond/Fish";
+import { LilyPads } from "@/components/pond/LilyPads";
+import { catOf, hasBoard, layerOf, sizeOf } from "@/lib/notes/fish";
 import type { Note } from "@/lib/notes/types";
 
 type PondCanvasProps = {
   notes: Note[];
-  canvasMode: boolean;
+  visible: Set<string>;
   onOpen: (id: string) => void;
+  onRecast: () => void;
+  onCapture: () => void;
 };
 
-type FishNode = {
-  id: string;
-  el: HTMLButtonElement | null;
+type Motion = {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
-  scale: number;
-  opacity: number;
-  blur: number;
+  dir: number;
+  speed: number;
+  phase: number;
   bob: number;
-  bobSpeed: number;
 };
 
-function subscribeMotion(onStoreChange: () => void) {
-  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-  media.addEventListener("change", onStoreChange);
-  return () => media.removeEventListener("change", onStoreChange);
-}
+type Ripple = { id: number; x: number; y: number };
 
-function motionSnapshot() {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
+export function PondCanvas({ notes, visible, onOpen, onRecast, onCapture }: PondCanvasProps) {
+  const pondRef = useRef<HTMLDivElement>(null);
+  const nodes = useRef<Record<string, HTMLButtonElement | null>>({});
+  const motion = useRef<Record<string, Motion>>({});
+  const [ripples, setRipples] = useState<Ripple[]>([]);
 
-export function PondCanvas({ notes, canvasMode, onOpen }: PondCanvasProps) {
-  const layerRef = useRef<HTMLDivElement>(null);
-  const nodesRef = useRef<FishNode[]>([]);
-  const reduced = useSyncExternalStore(subscribeMotion, motionSnapshot, () => false);
-  const shown = useMemo(() => sampleFish(notes), [notes]);
-
-  useLayoutEffect(() => {
-    const layer = layerRef.current;
-    if (!layer) return;
-
-    const buttons = [...layer.querySelectorAll<HTMLButtonElement>("[data-fish]")];
-    const width = layer.clientWidth;
-    const height = layer.clientHeight;
-
-    nodesRef.current = shown.map((note, index) => {
-      const depth = index % 3;
-      const fish = fishFor(note.cat, note.id);
-      const scale =
-        neglectScale(note.acted_at) * (depth === 0 ? 0.72 : depth === 1 ? 0.88 : 1);
-      const span = Math.max(48, fish.width * scale);
-      return {
-        id: note.id,
-        el: buttons.find((button) => button.dataset.id === note.id) ?? null,
-        x: (index * 97) % Math.max(16, width - span),
-        y: (index * 53) % Math.max(16, height - span * 0.55),
-        vx: (depth === 0 ? 0.12 : depth === 1 ? 0.2 : 0.32) * (index % 2 ? 1 : -1),
-        vy: (depth === 0 ? 0.06 : depth === 1 ? 0.1 : 0.16) * (index % 3 === 0 ? 1 : -1),
-        scale,
-        opacity: depth === 0 ? 0.45 : depth === 1 ? 0.72 : 1,
-        blur: depth === 0 ? 2 : depth === 1 ? 0.6 : 0,
-        bob: index,
-        bobSpeed: 0.015 + depth * 0.008,
+  useEffect(() => {
+    notes.forEach((note, index) => {
+      if (motion.current[note.id]) return;
+      const layer = layerOf(note.id);
+      motion.current[note.id] = {
+        x: (index * 37) % 100,
+        y: 12 + ((index * 53) % 74),
+        dir: index % 2 ? 1 : -1,
+        speed: (0.55 + ((index * 7) % 10) / 22) * layer.speed,
+        phase: (index * 1.7) % 6.283,
+        bob: 1.2 + ((index * 3) % 5) / 3,
       };
     });
 
-    function paint(node: FishNode, y = node.y) {
-      if (!node.el) return;
-      node.el.style.transform = `translate3d(${node.x}px, ${y}px, 0) scale(${node.scale})`;
-      node.el.style.opacity = String(node.opacity);
-      node.el.style.zIndex = node.blur === 0 ? "3" : node.blur < 1 ? "2" : "1";
-      node.el.style.filter = node.blur
-        ? `drop-shadow(var(--shadow-sm)) blur(${node.blur}px)`
-        : "drop-shadow(var(--shadow-sm))";
-    }
+    let raf = 0;
+    let last = performance.now();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (reduced) {
-      nodesRef.current.forEach((node) => paint(node));
-      return;
-    }
-
-    let frame = 0;
-    const tick = () => {
-      const pondWidth = layer.clientWidth;
-      const pondHeight = layer.clientHeight;
-      for (const node of nodesRef.current) {
-        node.x += node.vx;
-        node.y += node.vy;
-        const maxX = Math.max(8, pondWidth - 96);
-        const maxY = Math.max(8, pondHeight - 64);
-        if (node.x > maxX || node.x < 8) node.vx *= -1;
-        if (node.y > maxY || node.y < 8) node.vy *= -1;
-        node.bob += node.bobSpeed;
-        paint(node, node.y + Math.sin(node.bob) * 6);
+    const tick = (t: number) => {
+      const dt = Math.min(t - last, 50) / 1000;
+      last = t;
+      for (const id of Object.keys(motion.current)) {
+        const m = motion.current[id];
+        const el = nodes.current[id];
+        if (!el) continue;
+        if (!reduce) {
+          m.x += m.dir * m.speed * dt;
+          if (m.x > 114) m.x = -14;
+          if (m.x < -14) m.x = 114;
+        }
+        el.style.left = `${m.x}%`;
+        el.style.top = `${m.y + (reduce ? 0 : Math.sin(t / 1500 + m.phase) * m.bob)}%`;
+        el.style.transform = `translate(-50%, -50%) scaleX(${m.dir})`;
       }
-      frame = requestAnimationFrame(tick);
+      raf = requestAnimationFrame(tick);
     };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [shown, reduced]);
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [notes]);
+
+  function tapWater(event: MouseEvent<HTMLDivElement>) {
+    const pond = pondRef.current;
+    if (!pond) return;
+    const box = pond.getBoundingClientRect();
+    const id = Math.random();
+    setRipples((list) => [...list, { id, x: event.clientX - box.left, y: event.clientY - box.top }]);
+    window.setTimeout(() => {
+      setRipples((list) => list.filter((ripple) => ripple.id !== id));
+    }, 900);
+    onRecast();
+  }
 
   return (
-    <section className="mt-8">
-      <div
-        className={`pond-water relative overflow-hidden rounded-input border border-line ${
-          canvasMode ? "h-[min(72vh,720px)]" : "h-[420px]"
-        }`}
-      >
-        <div ref={layerRef} className="absolute inset-0">
-          {shown.length === 0 ? (
-            <p className="type-label absolute inset-0 grid place-items-center px-6 text-center text-ink-soft">
-              Empty pond. Capture a spark and a fish will appear.
-            </p>
-          ) : (
-            shown.map((note) => {
-              const fish = fishFor(note.cat, note.id);
-              return (
-                <button
-                  key={note.id}
-                  type="button"
-                  data-fish
-                  data-id={note.id}
-                  className="pond-fish"
-                  style={{ width: fish.width }}
-                  onClick={() => onOpen(note.id)}
-                  aria-label={`${fish.species}: ${note.title || "Untitled spark"}`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={fish.src} alt="" width={fish.width} height={Math.round(fish.width * 0.6)} />
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
-    </section>
+    <div
+      ref={pondRef}
+      onClick={tapWater}
+      className="pond-water relative min-h-0 flex-1 overflow-hidden rounded-card"
+    >
+      <LilyPads />
+      {ripples.map((ripple) => (
+        <span
+          key={ripple.id}
+          className="pond-ripple pointer-events-none absolute size-14 animate-ping rounded-pill"
+          style={{ left: ripple.x - 28, top: ripple.y - 28 }}
+        />
+      ))}
+      {notes.map((note) => {
+        const cat = catOf(note.cat);
+        const dim = !visible.has(note.id);
+        return (
+          <button
+            key={note.id}
+            ref={(el) => {
+              nodes.current[note.id] = el;
+            }}
+            type="button"
+            className="pond-fish"
+            style={{ pointerEvents: dim ? "none" : "auto" }}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (!dim) onOpen(note.id);
+            }}
+            aria-label={note.title || "Untitled spark"}
+          >
+            <span className="relative block">
+              <Fish
+                species={cat.species}
+                fill={cat.fill}
+                mark={cat.mark}
+                scale={sizeOf(note.acted_at)}
+                dim={dim}
+                layer={layerOf(note.id)}
+              />
+              {hasBoard(note) && !dim ? (
+                <span className="absolute top-[-5px] right-1.5 size-1.5 rounded-pill bg-surface" />
+              ) : null}
+            </span>
+          </button>
+        );
+      })}
+      <CaptureButton
+        className="absolute right-6 bottom-6 z-10"
+        onClick={(event) => {
+          event.stopPropagation();
+          onCapture();
+        }}
+      />
+      <p className="type-caption pointer-events-none absolute bottom-8 left-6">
+        TAP THE WATER TO RECAST
+      </p>
+    </div>
   );
 }

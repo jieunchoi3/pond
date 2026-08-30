@@ -22,6 +22,17 @@
   --color-water-1: var(--water-1);
   --color-water-2: var(--water-2);
   --color-water-3: var(--water-3);
+  --color-scrim: var(--scrim);
+  --color-lily-a: var(--lily-a);
+  --color-lily-b: var(--lily-b);
+  --color-species-koi-fill: var(--species-koi-fill);
+  --color-species-koi-mark: var(--species-koi-mark);
+  --color-species-tang-fill: var(--species-tang-fill);
+  --color-species-tang-mark: var(--species-tang-mark);
+  --color-species-betta-fill: var(--species-betta-fill);
+  --color-species-betta-mark: var(--species-betta-mark);
+  --color-species-goldfish-fill: var(--species-goldfish-fill);
+  --color-species-goldfish-mark: var(--species-goldfish-mark);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -76,6 +87,18 @@
   --water-1: #eaf4f0;
   --water-2: #c8e1de;
   --water-3: #9bc7cc;
+  --species-koi-fill: #f2f0ea;
+  --species-koi-mark: #e4652f;
+  --species-tang-fill: #4e86b8;
+  --species-tang-mark: #f2c14e;
+  --species-betta-fill: #cfc6ec;
+  --species-betta-mark: #9c8fd4;
+  --species-goldfish-fill: #f0913c;
+  --species-goldfish-mark: #d9631e;
+  --lily-a: #6e9e74;
+  --lily-b: #8fb98a;
+  --scrim: rgba(25, 45, 45, 0.32);
+  --pond-inset: inset 0 0 80px rgba(40, 80, 85, 0.12);
   --r-card: 12px;
   --r-input: 20px;
   --r-pill: 999px;
@@ -88,6 +111,17 @@
   --text-caption: 12px;
   --size-fab: 72px;
   --page-max: 1392px;
+  --fish-koi-fill: #f2f0ea;
+  --fish-koi-mark: #e4652f;
+  --fish-tang-fill: #4e86b8;
+  --fish-tang-mark: #f2c14e;
+  --fish-betta-fill: #cfc6ec;
+  --fish-betta-mark: #9c8fd4;
+  --fish-goldfish-fill: #f0913c;
+  --fish-goldfish-mark: #d9631e;
+  --lily-a: #6e9e74;
+  --lily-b: #8fb98a;
+  --scrim: rgba(25, 45, 45, 0.32);
 
   --background: var(--surface);
   --foreground: var(--ink);
@@ -211,32 +245,33 @@
 }
 
 .pond-water {
-  background-color: var(--water-2);
-  background-image:
-    radial-gradient(ellipse 70% 50% at 18% 28%, var(--water-1) 0%, transparent 55%),
-    radial-gradient(ellipse 55% 45% at 82% 72%, var(--water-3) 0%, transparent 50%),
-    linear-gradient(180deg, var(--water-1) 0%, var(--water-2) 52%, var(--water-3) 100%);
+  background: linear-gradient(180deg, var(--water-1) 0%, var(--water-2) 55%, var(--water-3) 100%);
+  box-shadow: var(--pond-inset);
 }
 
 .pond-fish {
   position: absolute;
-  top: 0;
-  left: 0;
   margin: 0;
   border: 0;
   background: transparent;
   padding: 0;
+  line-height: 0;
   cursor: pointer;
-  will-change: transform;
   filter: drop-shadow(var(--shadow-sm));
 }
 
-.pond-fish img {
-  display: block;
-  width: 100%;
-  height: auto;
-  pointer-events: none;
-  user-select: none;
+.pond-board {
+  background-color: var(--surface);
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in srgb, var(--ink) 11%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 24px 24px;
+}
+
+.pond-ripple {
+  border: 1px solid color-mix(in srgb, var(--surface) 90%, transparent);
 }
 
 .editor-split {

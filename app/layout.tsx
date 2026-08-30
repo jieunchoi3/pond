@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ko"
       className={`${inria.variable} ${jetbrains.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-surface font-sans text-ink">{children}</body>
+      <body className="min-h-full bg-water-1 font-sans text-ink">{children}</body>
     </html>
   );
 }

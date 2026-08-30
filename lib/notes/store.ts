@@ -1,8 +1,14 @@
-import { CATS, type Cat, type Note } from "@/lib/notes/types";
+import {
+  BLOCK_TYPES,
+  isCat,
+  type Cat,
+  type Note,
+  type NoteBlock,
+} from "@/lib/notes/types";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-const NOTES_KEY = "pond.notes.v2";
-const OUTBOX_KEY = "pond.outbox.v2";
+const NOTES_KEY = "pond.notes.v3";
+const OUTBOX_KEY = "pond.outbox.v3";
 const EVENT = "pond-notes";
 
 let snapshot: Note[] = [];
@@ -44,91 +50,168 @@ function daysAgo(days: number) {
 
 const SEED: Note[] = [
   {
-    id: "seed-bubble",
+    id: "n1",
     user_id: null,
-    cat: "ai art",
-    title: "Bubble dream",
-    body: "A girl walking through a city of soap bubbles, wearing a bright white shirt with a dotted collar.",
+    cat: "ai",
+    title: "fruit as makeup",
+    body: "banana mascara, grape shadow. shoot the purple one first.",
     blocks: [],
-    created_at: daysAgo(14),
-    acted_at: daysAgo(2),
-    pending: false,
-  },
-  {
-    id: "seed-commit",
-    user_id: null,
-    cat: "vibe coding",
-    title: "First commit of the day",
-    body: "Ship the pond layout before noon. Pretendard for Korean, Inria for the titles.",
-    blocks: [],
-    created_at: daysAgo(6),
-    acted_at: daysAgo(1),
-    pending: false,
-  },
-  {
-    id: "seed-melody",
-    user_id: null,
-    cat: "music",
-    title: "새벽 멜로디",
-    body: "창문을 열어두면 멀리서 기타가 들린다. 그 음을 메모해 두고 밤에 다시 켠다.",
-    blocks: [],
-    created_at: daysAgo(9),
-    acted_at: daysAgo(5),
-    pending: false,
-  },
-  {
-    id: "seed-question",
-    user_id: null,
-    cat: "vibe coding",
-    title: "연못에 던진 질문",
-    body: "아이디어가 가라앉기 전에 던져 넣기. 고기가 되면 나중에 건져 올린다.",
-    blocks: [],
-    created_at: daysAgo(20),
-    acted_at: daysAgo(12),
-    pending: false,
-  },
-  {
-    id: "seed-recast",
-    user_id: null,
-    cat: "ai art",
-    title: "Koi sketch, recast",
-    body: "Last week’s vermilion koi, redrawn without the sticker shadow. Keep the white body; let it sit in the water.",
-    blocks: [],
-    created_at: daysAgo(10),
+    created_at: daysAgo(0),
     acted_at: daysAgo(0),
     pending: false,
   },
   {
-    id: "seed-blush",
+    id: "n2",
     user_id: null,
-    cat: "ai art",
-    title: "분홍 비늘",
-    body: "연못 가장자리에 분홍 잉어가 머문다. 아직 제목도 없는 스케치.",
+    cat: "ai",
+    title: "bubble dream",
+    body: "a girl dreaming with a bubble floating above her head, bright white shirt, soft chrome light.",
     blocks: [],
-    created_at: daysAgo(28),
-    acted_at: daysAgo(21),
+    created_at: daysAgo(47),
+    acted_at: daysAgo(47),
     pending: false,
   },
   {
-    id: "seed-loop",
+    id: "n3",
+    user_id: null,
+    cat: "ai",
+    title: "ink in water",
+    body: "filmed from directly above, very slow. 120fps cut to half speed. the bloom is the whole shot.",
+    blocks: [
+      { id: "n3-c1", type: "colour", content: "#1B2A33", x: 30, y: 26, w: 110 },
+      { id: "n3-c2", type: "colour", content: "#C6D8CE", x: 156, y: 26, w: 110 },
+      { id: "n3-v1", type: "video", content: "https://youtube.com/watch?v=ink-reference", x: 30, y: 150, w: 210 },
+      { id: "n3-a1", type: "voice", content: "0:14", x: 290, y: 26, w: 190 },
+    ],
+    created_at: daysAgo(96),
+    acted_at: daysAgo(96),
+    pending: false,
+  },
+  {
+    id: "n4",
+    user_id: null,
+    cat: "code",
+    title: "capture speed",
+    body: "under 400ms to first keystroke. nothing else matters if that's slow.",
+    blocks: [],
+    created_at: daysAgo(2),
+    acted_at: daysAgo(2),
+    pending: false,
+  },
+  {
+    id: "n5",
+    user_id: null,
+    cat: "code",
+    title: "one note type",
+    body: "title + body + board. never build two kinds of note.",
+    blocks: [],
+    created_at: daysAgo(29),
+    acted_at: daysAgo(29),
+    pending: false,
+  },
+  {
+    id: "n6",
+    user_id: null,
+    cat: "code",
+    title: "hold to record",
+    body: "tap + to type, hold + to record a voice note.",
+    blocks: [],
+    created_at: daysAgo(71),
+    acted_at: daysAgo(71),
+    pending: false,
+  },
+  {
+    id: "n7",
+    user_id: null,
+    cat: "idea",
+    title: "pigeon app",
+    body: "people can take a picture of pigeons and adopt them.",
+    blocks: [],
+    created_at: daysAgo(38),
+    acted_at: daysAgo(38),
+    pending: false,
+  },
+  {
+    id: "n8",
     user_id: null,
     cat: "music",
-    title: "Three-color loop",
-    body: "A bass line that never resolves. Leave it swimming until Friday.",
-    blocks: [],
-    created_at: daysAgo(50),
-    acted_at: daysAgo(43),
+    title: "video moodboard",
+    body: "pale mint, wet stone, one orange accident. reference cut pinned below.",
+    blocks: [
+      { id: "n8-c1", type: "colour", content: "var(--water-1)", x: 28, y: 24, w: 100 },
+      { id: "n8-c2", type: "colour", content: "var(--water-3)", x: 142, y: 24, w: 100 },
+      { id: "n8-c3", type: "colour", content: "var(--accent)", x: 256, y: 24, w: 100 },
+      { id: "n8-v1", type: "video", content: "https://youtube.com/watch?v=reference-cut", x: 28, y: 148, w: 210 },
+      { id: "n8-i1", type: "image", content: "", x: 262, y: 148, w: 200 },
+    ],
+    created_at: daysAgo(58),
+    acted_at: daysAgo(58),
     pending: false,
   },
   {
-    id: "seed-honey",
+    id: "n9",
     user_id: null,
-    cat: "vibe coding",
-    title: "Honey hour",
-    body: "Late light on the water. A small carp, a smaller task: write one sentence and stop.",
+    cat: "music",
+    title: "field recording",
+    body: "rain on the studio window. keep the traffic in.",
     blocks: [],
-    created_at: daysAgo(16),
-    acted_at: daysAgo(8),
+    created_at: daysAgo(103),
+    acted_at: daysAgo(103),
+    pending: false,
+  },
+  {
+    id: "n10",
+    user_id: null,
+    cat: "idea",
+    title: "one-thing shop",
+    body: "sells a single product. it changes every month.",
+    blocks: [],
+    created_at: daysAgo(6),
+    acted_at: daysAgo(6),
+    pending: false,
+  },
+  {
+    id: "n11",
+    user_id: null,
+    cat: "idea",
+    title: "three-number report",
+    body: "a weekly report that is three numbers and no commentary.",
+    blocks: [],
+    created_at: daysAgo(132),
+    acted_at: daysAgo(132),
+    pending: false,
+  },
+  {
+    id: "n12",
+    user_id: null,
+    cat: "music",
+    title: "no drums until chorus two",
+    body: "downtempo. let it feel unfinished for 90 seconds.",
+    blocks: [],
+    created_at: daysAgo(11),
+    acted_at: daysAgo(11),
+    pending: false,
+  },
+  {
+    id: "n13",
+    user_id: null,
+    cat: "code",
+    title: "the net tool",
+    body: "drag a net over fish to batch-move them to another pond.",
+    blocks: [],
+    created_at: daysAgo(84),
+    acted_at: daysAgo(84),
+    pending: false,
+  },
+  {
+    id: "n14",
+    user_id: null,
+    cat: "ai",
+    title: "bubble warrior",
+    body: "there is a girl watching the water from inside a soap bubble.",
+    blocks: [],
+    created_at: daysAgo(21),
+    acted_at: daysAgo(21),
     pending: false,
   },
 ];
@@ -139,8 +222,8 @@ function isNote(value: unknown): value is Note {
   return (
     typeof note.id === "string" &&
     isCat(String(note.cat ?? "")) &&
-    typeof note.created_at === "string" &&
-    !Number.isNaN(Date.parse(note.created_at))
+    typeof note.acted_at === "string" &&
+    !Number.isNaN(Date.parse(note.acted_at))
   );
 }
 
@@ -161,64 +244,65 @@ export function getServerNotesSnapshot(): Note[] {
   return SEED;
 }
 
-function isBlock(value: unknown): boolean {
+function isBlock(value: unknown): value is NoteBlock {
   if (!value || typeof value !== "object") return false;
-  const block = value as { type?: string };
-  return block.type === "image" || block.type === "youtube" || block.type === "audio";
+  const block = value as Partial<NoteBlock>;
+  return (
+    typeof block.id === "string" &&
+    BLOCK_TYPES.includes(block.type as NoteBlock["type"]) &&
+    typeof block.content === "string" &&
+    typeof block.x === "number" &&
+    typeof block.y === "number" &&
+    typeof block.w === "number"
+  );
 }
 
-export function isCat(value: string): value is Cat {
-  return (CATS as readonly string[]).includes(value);
-}
-
-export function splitSpark(text: string): { title: string; body: string } {
-  const trimmed = text.replace(/\s+$/g, "").replace(/^\s+/, "");
-  const newline = trimmed.indexOf("\n");
-  if (newline === -1) return { title: "", body: trimmed };
-  return {
-    title: trimmed.slice(0, newline).trim(),
-    body: trimmed.slice(newline + 1).trim(),
-  };
-}
+export { isCat };
 
 export function addNote(input: { cat: Cat; text: string; userId: string | null }): Note {
   const now = new Date().toISOString();
-  const { title, body } = splitSpark(input.text);
   const note: Note = {
     id: crypto.randomUUID(),
     user_id: input.userId,
     cat: input.cat,
-    title,
-    body,
+    title: input.text.trim(),
+    body: "",
     blocks: [],
     created_at: now,
     acted_at: now,
     pending: true,
   };
-  persist([note, ...getNotesSnapshot()]);
+  persist([...getNotesSnapshot(), note]);
   queueMicrotask(() => {
     void syncNote(note);
   });
   return note;
 }
 
-export function patchNote(id: string, patch: Partial<Pick<Note, "title" | "body" | "cat" | "blocks">>) {
-  const now = new Date().toISOString();
-  persist(
-    getNotesSnapshot().map((note) =>
-      note.id === id ? { ...note, ...patch, acted_at: now, pending: true } : note,
-    ),
-  );
-  const next = getNotesSnapshot().find((note) => note.id === id);
-  if (next) {
-    queueMicrotask(() => {
-      void syncNote(next);
-    });
-  }
+function writeNote(next: Note) {
+  persist(getNotesSnapshot().map((note) => (note.id === next.id ? next : note)));
+  queueMicrotask(() => {
+    void syncNote(next);
+  });
 }
 
-export function recastNote(id: string) {
-  patchNote(id, {});
+export function patchNote(id: string, patch: Partial<Pick<Note, "title" | "body" | "cat" | "blocks">>) {
+  const current = getNotesSnapshot().find((note) => note.id === id);
+  if (!current) return;
+  writeNote({ ...current, ...patch, pending: true });
+}
+
+export function markActed(id: string) {
+  const current = getNotesSnapshot().find((note) => note.id === id);
+  if (!current) return;
+  writeNote({ ...current, acted_at: new Date().toISOString(), pending: true });
+}
+
+export function deleteNote(id: string) {
+  persist(getNotesSnapshot().filter((note) => note.id !== id));
+  queueMicrotask(() => {
+    void removeRemote(id);
+  });
 }
 
 export function mergeRemote(rows: Note[]) {
@@ -292,6 +376,16 @@ export async function syncNote(note: Note): Promise<"synced" | "queued" | "skipp
   return "synced";
 }
 
+async function removeRemote(id: string) {
+  const supabase = createClient();
+  if (!supabase) return;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from("notes").delete().eq("id", id);
+}
+
 export async function ensurePond() {
   const supabase = createClient();
   if (!supabase) return;
@@ -319,7 +413,7 @@ export async function pullNotes() {
       .map((row) => ({
         ...row,
         cat: row.cat as Cat,
-        blocks: Array.isArray(row.blocks) ? row.blocks.filter(isBlock) as Note["blocks"] : [],
+        blocks: Array.isArray(row.blocks) ? row.blocks.filter(isBlock) : [],
         pending: false,
       })),
   );

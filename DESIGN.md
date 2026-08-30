@@ -102,9 +102,22 @@ Card title at `title`, card body at `body` in `--ink-soft`. That one change fixe
 --water-1:    #EAF4F0;
 --water-2:    #C8E1DE;
 --water-3:    #9BC7CC;
+
+/* species — fills/marks for the four fish, not extra accents */
+--species-koi-fill:      #F2F0EA;
+--species-koi-mark:      #E4652F;
+--species-tang-fill:     #4E86B8;
+--species-tang-mark:     #F2C14E;
+--species-betta-fill:    #CFC6EC;
+--species-betta-mark:    #9C8FD4;
+--species-goldfish-fill: #F0913C;
+--species-goldfish-mark: #D9631E;
+--lily-a: #6E9E74;
+--lily-b: #8FB98A;
+--scrim: rgba(25, 45, 45, 0.32);
 ```
 
-Retire `#f0f4ff` and `#e8e2d5`. Card backgrounds → `--surface-2`. Icon buttons → `--accent-soft`. The + button → `--accent`, so it's the one loud thing on the screen.
+Retire `#f0f4ff` and `#e8e2d5`. Card backgrounds → `--surface-2`. Icon buttons → `--accent-soft`. The + button → `--accent`, so it's the one loud thing on the screen. Species fills are for the fish SVGs only.
 
 ### Radius — three values
 
@@ -146,12 +159,16 @@ import { Icon } from '@iconify/react';
 
 ### Fish assets
 
-The fish PNGs are real image fills in the file (`image 365`, `366`, `370`, `373`, `375`, `376`, `378`, `379`). Export them from Figma at 2x PNG with transparency into `/public/fish/`. Two things to fix on export:
+Four SVG species (not PNG cut-outs), coloured with the species tokens above:
 
-1. **Remove the white fringing** on the cut-outs — visible on the red and pink fish. Re-mask, or the halo will show against the water on every screen.
-2. Name them by species, not `image 373`: `koi-white.png`, `goldfish-orange.png`, `tang-blue.png`, `betta-lilac.png`.
+| Cat | Chip label | Species |
+|---|---|---|
+| `ai` | ai art | koi |
+| `code` | vibe coding | tang |
+| `music` | music | betta |
+| `idea` | ideas | goldfish |
 
-Figma MCP could not authenticate in this cloud session, so fish are implemented as named SVG-quality PNG cut-outs at `/public/fish/`. Swap in 2× exports from the file when available.
+Size = neglect: `0.44 + min(daysIdle, 90) / 90 * 0.8`. Three depth layers `{k, o, blur, speed}`: `1 / 1 / 0 / 1`, `0.74 / 0.68 / 1.4 / 0.66`, `0.50 / 0.40 / 3 / 0.42`.
 
 ---
 
