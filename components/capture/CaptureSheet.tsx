@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { CATEGORIES, type Cat } from "@/lib/notes/types";
+import { CATS, type Cat } from "@/lib/notes/types";
 
 export type CaptureSheetHandle = {
   open: () => number;
@@ -9,14 +9,15 @@ export type CaptureSheetHandle = {
 };
 
 type CaptureSheetProps = {
-  onSave: (input: { cat: Cat; text: string; open: boolean }) => void;
+  onRelease: (input: { cat: Cat; text: string }) => void;
+  onOpenIt?: (input: { cat: Cat; text: string }) => void;
 };
 
 export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
-  function CaptureSheet({ onSave }, ref) {
+  function CaptureSheet({ onRelease, onOpenIt }, ref) {
     const rootRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [cat, setCat] = useState<Cat>("ai");
+    const [cat, setCat] = useState<Cat>("vibe coding");
     const [draft, setDraft] = useState("");
 
     function show() {
@@ -46,11 +47,13 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
       },
     }));
 
-    function save(open: boolean) {
+    function commit(openEditor: boolean) {
       const text = draft.trim();
-      if (!text && !open) return;
       hide();
-      onSave({ cat, text, open });
+      if (!text && !openEditor) return;
+      const payload = { cat, text };
+      if (openEditor && onOpenIt) onOpenIt(payload);
+      else if (text) onRelease(payload);
       setDraft("");
     }
 
@@ -59,36 +62,11 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
         ref={rootRef}
         data-open="false"
         aria-hidden="true"
-        className="fixed inset-0 z-40 flex flex-col justify-end bg-scrim data-[open=false]:pointer-events-none data-[open=false]:opacity-0"
+        className="fixed inset-0 z-40 flex flex-col bg-surface p-6 data-[open=false]:pointer-events-none data-[open=false]:opacity-0"
       >
-        <div className="rounded-t-input bg-surface p-6">
-          <textarea
-            ref={textareaRef}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            rows={3}
-            placeholder="what just popped?"
-            className="type-body w-full resize-none bg-transparent text-ink outline-none placeholder:text-ink-soft"
-          />
-          <div className="flex gap-2 overflow-x-auto py-2.5">
-            {CATEGORIES.map((item) => {
-              const on = item.id === cat;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setCat(item.id)}
-                  aria-pressed={on}
-                  className={`type-label shrink-0 rounded-pill border border-line px-4 py-2 ${
-                    on ? "bg-accent text-surface" : "bg-surface-2 text-ink-soft"
-                  }`}
-                >
-                  {item.name}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex items-center justify-between pt-1.5">
+        <div className="mx-auto flex h-full w-full max-w-(--page-max) flex-col">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <p className="type-caption">new spark</p>
             <button
               type="button"
               onClick={() => {
@@ -99,22 +77,52 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
             >
               Close
             </button>
-            <div className="flex gap-2">
+          </div>
+
+          <textarea
+            ref={textareaRef}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Add your original spark"
+            className="type-body min-h-0 w-full flex-1 resize-none bg-transparent text-ink outline-none placeholder:text-ink-soft"
+          />
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {CATS.map((item) => {
+              const selected = item === cat;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setCat(item)}
+                  aria-pressed={selected}
+                  className={`type-label rounded-pill px-4 py-2 ${
+                    selected ? "bg-accent text-surface" : "bg-surface-2 text-ink"
+                  }`}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            {onOpenIt ? (
               <button
                 type="button"
-                onClick={() => save(true)}
-                className="type-label rounded-pill border border-line px-[18px] py-2.5 text-ink"
+                onClick={() => commit(true)}
+                className="type-label h-12 flex-1 rounded-pill border border-line text-ink"
               >
                 Open it
               </button>
-              <button
-                type="button"
-                onClick={() => save(false)}
-                className="type-label rounded-pill bg-accent px-[26px] py-2.5 text-surface"
-              >
-                Release
-              </button>
-            </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => commit(false)}
+              className="type-label h-12 flex-1 rounded-pill bg-accent text-surface"
+            >
+              Release
+            </button>
           </div>
         </div>
       </div>

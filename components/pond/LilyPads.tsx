@@ -12,7 +12,7 @@ export function LilyPads() {
     <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
       {PADS.map((pad, index) => (
         <g key={index} opacity={pad.o} transform={`translate(${pad.x}% ${pad.y}%)`}>
-          <circle r={pad.r} fill={index % 2 ? "var(--lily-a)" : "var(--lily-b)"} />
+          <circle r={pad.r} fill={index % 2 ? "var(--water-3)" : "var(--ink-soft)"} />
           <path
             d={`M0 0 L ${pad.r * 0.95} ${-pad.r * 0.34} A ${pad.r} ${pad.r} 0 0 0 ${pad.r * 0.95} ${pad.r * 0.34} Z`}
             fill="var(--water-2)"

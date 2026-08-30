@@ -22,17 +22,6 @@
   --color-water-1: var(--water-1);
   --color-water-2: var(--water-2);
   --color-water-3: var(--water-3);
-  --color-scrim: var(--scrim);
-  --color-lily-a: var(--lily-a);
-  --color-lily-b: var(--lily-b);
-  --color-species-koi-fill: var(--species-koi-fill);
-  --color-species-koi-mark: var(--species-koi-mark);
-  --color-species-tang-fill: var(--species-tang-fill);
-  --color-species-tang-mark: var(--species-tang-mark);
-  --color-species-betta-fill: var(--species-betta-fill);
-  --color-species-betta-mark: var(--species-betta-mark);
-  --color-species-goldfish-fill: var(--species-goldfish-fill);
-  --color-species-goldfish-mark: var(--species-goldfish-mark);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -87,18 +76,6 @@
   --water-1: #eaf4f0;
   --water-2: #c8e1de;
   --water-3: #9bc7cc;
-  --species-koi-fill: #f2f0ea;
-  --species-koi-mark: #e4652f;
-  --species-tang-fill: #4e86b8;
-  --species-tang-mark: #f2c14e;
-  --species-betta-fill: #cfc6ec;
-  --species-betta-mark: #9c8fd4;
-  --species-goldfish-fill: #f0913c;
-  --species-goldfish-mark: #d9631e;
-  --lily-a: #6e9e74;
-  --lily-b: #8fb98a;
-  --scrim: rgba(25, 45, 45, 0.32);
-  --pond-inset: inset 0 0 80px rgba(40, 80, 85, 0.12);
   --r-card: 12px;
   --r-input: 20px;
   --r-pill: 999px;
@@ -235,7 +212,6 @@
 
 .pond-water {
   background: linear-gradient(180deg, var(--water-1) 0%, var(--water-2) 55%, var(--water-3) 100%);
-  box-shadow: var(--pond-inset);
 }
 
 .pond-fish {
@@ -247,6 +223,14 @@
   line-height: 0;
   cursor: pointer;
   filter: drop-shadow(var(--shadow-sm));
+}
+
+.pond-fish img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
 }
 
 .pond-board {

@@ -5,7 +5,7 @@ import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
 import { Fish } from "@/components/pond/Fish";
 import { daysIdle, hasBoard } from "@/lib/notes/fish";
-import { categoryOf, type BlockType, type Note, type NoteBlock } from "@/lib/notes/types";
+import { type BlockType, type Note, type NoteBlock } from "@/lib/notes/types";
 
 type NoteEditorProps = {
   note: Note;
@@ -31,7 +31,6 @@ export function NoteEditor({
   onDelete,
   onClose,
 }: NoteEditorProps) {
-  const cat = categoryOf(note.cat);
   const [split, setSplit] = useState(hasBoard(note) ? 0.42 : 0.76);
   const wrapRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -85,9 +84,9 @@ export function NoteEditor({
     <div className="absolute inset-0 z-50 flex flex-col bg-surface">
       <header className="flex items-center justify-between gap-3 border-b border-line bg-water-1 px-6 py-3.5">
         <div className="flex items-center gap-2">
-          <Fish species={cat.species} fill={cat.fill} mark={cat.mark} scale={0.26} />
+          <Fish cat={note.cat} id={note.id} scale={0.45} />
           <span className="type-caption tracking-[0.08em]">
-            {cat.name.toUpperCase()} · {daysIdle(note.acted_at)}D
+            {note.cat.toUpperCase()} · {daysIdle(note.acted_at)}d
           </span>
         </div>
         <div className="flex items-center gap-2">

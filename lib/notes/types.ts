@@ -1,47 +1,13 @@
-export const CATS = ["ai", "code", "music", "idea"] as const;
+export const CATS = ["ai art", "vibe coding", "music"] as const;
 
 export type Cat = (typeof CATS)[number];
 
-export type Species = "koi" | "tang" | "betta" | "goldfish";
-
 export type Category = {
   id: Cat;
-  name: string;
-  species: Species;
-  fill: string;
-  mark: string;
+  name: Cat;
 };
 
-export const CATEGORIES: Category[] = [
-  {
-    id: "ai",
-    name: "ai art",
-    species: "koi",
-    fill: "var(--species-koi-fill)",
-    mark: "var(--species-koi-mark)",
-  },
-  {
-    id: "code",
-    name: "vibe coding",
-    species: "tang",
-    fill: "var(--species-tang-fill)",
-    mark: "var(--species-tang-mark)",
-  },
-  {
-    id: "music",
-    name: "music",
-    species: "betta",
-    fill: "var(--species-betta-fill)",
-    mark: "var(--species-betta-mark)",
-  },
-  {
-    id: "idea",
-    name: "ideas",
-    species: "goldfish",
-    fill: "var(--species-goldfish-fill)",
-    mark: "var(--species-goldfish-mark)",
-  },
-];
+export const CATEGORIES: Category[] = CATS.map((id) => ({ id, name: id }));
 
 export function categoryOf(id: string): Category {
   return CATEGORIES.find((item) => item.id === id) ?? CATEGORIES[0]!;

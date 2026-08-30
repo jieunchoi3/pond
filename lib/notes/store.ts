@@ -7,8 +7,8 @@ import {
 } from "@/lib/notes/types";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-const NOTES_KEY = "pond.notes.v3";
-const OUTBOX_KEY = "pond.outbox.v3";
+const NOTES_KEY = "pond.notes.v4";
+const OUTBOX_KEY = "pond.outbox.v4";
 const EVENT = "pond-notes";
 
 let snapshot: Note[] = [];
@@ -52,7 +52,7 @@ const SEED: Note[] = [
   {
     id: "n1",
     user_id: null,
-    cat: "ai",
+    cat: "ai art",
     title: "fruit as makeup",
     body: "banana mascara, grape shadow. shoot the purple one first.",
     blocks: [],
@@ -63,7 +63,7 @@ const SEED: Note[] = [
   {
     id: "n2",
     user_id: null,
-    cat: "ai",
+    cat: "ai art",
     title: "bubble dream",
     body: "a girl dreaming with a bubble floating above her head, bright white shirt, soft chrome light.",
     blocks: [],
@@ -74,7 +74,7 @@ const SEED: Note[] = [
   {
     id: "n3",
     user_id: null,
-    cat: "ai",
+    cat: "ai art",
     title: "ink in water",
     body: "filmed from directly above, very slow. 120fps cut to half speed. the bloom is the whole shot.",
     blocks: [
@@ -90,7 +90,7 @@ const SEED: Note[] = [
   {
     id: "n4",
     user_id: null,
-    cat: "code",
+    cat: "vibe coding",
     title: "capture speed",
     body: "under 400ms to first keystroke. nothing else matters if that's slow.",
     blocks: [],
@@ -101,7 +101,7 @@ const SEED: Note[] = [
   {
     id: "n5",
     user_id: null,
-    cat: "code",
+    cat: "vibe coding",
     title: "one note type",
     body: "title + body + board. never build two kinds of note.",
     blocks: [],
@@ -112,7 +112,7 @@ const SEED: Note[] = [
   {
     id: "n6",
     user_id: null,
-    cat: "code",
+    cat: "vibe coding",
     title: "hold to record",
     body: "tap + to type, hold + to record a voice note.",
     blocks: [],
@@ -123,7 +123,7 @@ const SEED: Note[] = [
   {
     id: "n7",
     user_id: null,
-    cat: "idea",
+    cat: "vibe coding",
     title: "pigeon app",
     body: "people can take a picture of pigeons and adopt them.",
     blocks: [],
@@ -162,7 +162,7 @@ const SEED: Note[] = [
   {
     id: "n10",
     user_id: null,
-    cat: "idea",
+    cat: "vibe coding",
     title: "one-thing shop",
     body: "sells a single product. it changes every month.",
     blocks: [],
@@ -173,7 +173,7 @@ const SEED: Note[] = [
   {
     id: "n11",
     user_id: null,
-    cat: "idea",
+    cat: "vibe coding",
     title: "three-number report",
     body: "a weekly report that is three numbers and no commentary.",
     blocks: [],
@@ -195,7 +195,7 @@ const SEED: Note[] = [
   {
     id: "n13",
     user_id: null,
-    cat: "code",
+    cat: "vibe coding",
     title: "the net tool",
     body: "drag a net over fish to batch-move them to another pond.",
     blocks: [],
@@ -206,7 +206,7 @@ const SEED: Note[] = [
   {
     id: "n14",
     user_id: null,
-    cat: "ai",
+    cat: "ai art",
     title: "bubble warrior",
     body: "there is a girl watching the water from inside a soap bubble.",
     blocks: [],
@@ -296,6 +296,10 @@ export function markActed(id: string) {
   const current = getNotesSnapshot().find((note) => note.id === id);
   if (!current) return;
   writeNote({ ...current, acted_at: new Date().toISOString(), pending: true });
+}
+
+export function recastNote(id: string) {
+  markActed(id);
 }
 
 export function deleteNote(id: string) {

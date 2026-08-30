@@ -102,22 +102,9 @@ Card title at `title`, card body at `body` in `--ink-soft`. That one change fixe
 --water-1:    #EAF4F0;
 --water-2:    #C8E1DE;
 --water-3:    #9BC7CC;
-
-/* species — fills/marks for the four fish, not extra accents */
---species-koi-fill:      #F2F0EA;
---species-koi-mark:      #E4652F;
---species-tang-fill:     #4E86B8;
---species-tang-mark:     #F2C14E;
---species-betta-fill:    #CFC6EC;
---species-betta-mark:    #9C8FD4;
---species-goldfish-fill: #F0913C;
---species-goldfish-mark: #D9631E;
---lily-a: #6E9E74;
---lily-b: #8FB98A;
---scrim: rgba(25, 45, 45, 0.32);
 ```
 
-Retire `#f0f4ff` and `#e8e2d5`. Card backgrounds → `--surface-2`. Icon buttons → `--accent-soft`. The + button → `--accent`, so it's the one loud thing on the screen. Species fills are for the fish SVGs only.
+Retire `#f0f4ff` and `#e8e2d5`. Card backgrounds → `--surface-2`. Icon buttons → `--accent-soft`. The + button → `--accent`, so it's the one loud thing on the screen.
 
 ### Radius — three values
 
@@ -159,16 +146,14 @@ import { Icon } from '@iconify/react';
 
 ### Fish assets
 
-Four SVG species (not PNG cut-outs), coloured with the species tokens above:
+The fish PNGs are real image fills in the file (`image 365`, `366`, `370`, `373`, `375`, `376`, `378`, `379`). Export them from Figma at 2x PNG with transparency into `/public/fish/`. Two things to fix on export:
 
-| Cat | Chip label | Species |
-|---|---|---|
-| `ai` | ai art | koi |
-| `code` | vibe coding | tang |
-| `music` | music | betta |
-| `idea` | ideas | goldfish |
+1. **Remove the white fringing** on the cut-outs — visible on the red and pink fish. Re-mask, or the halo will show against the water on every screen.
+2. Name them by species, not `image 373`: `koi-white.png`, `goldfish-orange.png`, `tang-blue.png`, `betta-lilac.png`.
 
-Size = neglect: `0.44 + min(daysIdle, 90) / 90 * 0.8`. Three depth layers `{k, o, blur, speed}`: `1 / 1 / 0 / 1`, `0.74 / 0.68 / 1.4 / 0.66`, `0.50 / 0.40 / 3 / 0.42`.
+Category decides species: **ai art → koi**, **vibe coding → tang / carp**, **music → betta / goldfish**. Size = neglect, capped at 90 days / 1.2×. Three depth layers: back fish are smaller, more transparent, blurred, and slower.
+
+Figma MCP may be unavailable in cloud agents; use the named PNGs in `/public/fish/` until 2× exports can be swapped in.
 
 ---
 
@@ -179,6 +164,15 @@ These override any older spec:
 - Fish **size = neglect** (days since `acted_at`), not age. Cap at 90 days / 1.2×.
 - A note is **title + body + board** (`blocks` jsonb). One note type.
 - Figma is for layout, spacing, hierarchy and assets. Colours, fonts, sizes, radii and shadows come from this file. If they disagree, this file wins.
+
+Figma file `fXEzUMLn0cfW83m2YUoOoZ` (filmmee):
+
+| Screen | Node |
+|---|---|
+| Pond + catch of the day | `847:1086` |
+| Pond, no catch panel | `850:1147` |
+| Note editor, filled | `850:1522` |
+| Note editor, empty | `850:1439` |
 
 ---
 

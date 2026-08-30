@@ -13,7 +13,7 @@ import {
   SearchAndFilters,
   type FilterTag,
 } from "@/components/pond/SearchAndFilters";
-import { matchesQuery, NARROW_BREAKPOINT } from "@/lib/notes/fish";
+import { catchOfTheDay, matchesQuery } from "@/lib/notes/fish";
 import {
   addNote,
   deleteNote,
@@ -24,6 +24,7 @@ import {
   markActed,
   patchNote,
   pullNotes,
+  recastNote,
   subscribeNotes,
 } from "@/lib/notes/store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -34,24 +35,12 @@ export function PondScreen() {
     getNotesSnapshot,
     getServerNotesSnapshot,
   );
-  const rootRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<CaptureSheetHandle>(null);
   const [query, setQuery] = useState("");
-  const [tag, setTag] = useState<FilterTag>(null);
-  const [seed, setSeed] = useState(0);
-  const [narrow, setNarrow] = useState(false);
+  const [tag, setTag] = useState<FilterTag>("all");
+  const [canvasMode, setCanvasMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const measure = () => setNarrow(root.offsetWidth < NARROW_BREAKPOINT);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(root);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -86,30 +75,61 @@ export function PondScreen() {
     };
   }, []);
 
-  const visible = useMemo(() => {
-    const ids = new Set<string>();
-    for (const note of notes) {
-      if (tag && note.cat !== tag) continue;
-      if (!matchesQuery(note.title, note.body, note.cat, query)) continue;
-      ids.add(note.id);
-    }
-    return ids;
+  const visibleNotes = useMemo(() => {
+    return notes.filter((note) => {
+      if (tag !== "all" && note.cat !== tag) return false;
+      return matchesQuery(note.title, note.body, note.cat, query);
+    });
   }, [notes, query, tag]);
 
-  const editing = notes.find((note) => note.id === editingId) ?? null;
-  const gutter = narrow ? "px-4 pt-4" : "px-6 pt-6";
+  const visibleIds = useMemo(
+    () => new Set(visibleNotes.map((note) => note.id)),
+    [visibleNotes],
+  );
 
-  function recast() {
-    setSeed((value) => value + 1);
-  }
+  const editing = notes.find((note) => note.id === editingId) ?? null;
+  const [narrow, setNarrow] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const measure = () => setNarrow(root.offsetWidth < 720);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
 
   function openCapture() {
     sheetRef.current?.open();
   }
 
+  function saveSpark(input: { cat: (typeof notes)[number]["cat"]; text: string }, open: boolean) {
+    const note = addNote({ cat: input.cat, text: input.text, userId: null });
+    if (open) setEditingId(note.id);
+  }
+
   return (
-    <div ref={rootRef} className="relative flex h-dvh flex-col overflow-hidden bg-water-1">
-      <div className={`mx-auto flex h-full w-full max-w-(--page-max) flex-col ${gutter}`}>
+    <div ref={rootRef} className="relative flex min-h-dvh flex-col bg-water-1">
+      <div className="mx-auto flex min-h-dvh w-full max-w-(--page-max) flex-col px-6 py-6">
+        <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setCanvasMode((value) => !value)}
+            aria-pressed={canvasMode}
+            className="type-label rounded-pill border border-line px-4 py-2 text-ink"
+          >
+            canvas mode
+          </button>
+        </div>
+
+        {isSupabaseConfigured() ? (
+          <div className="mb-4">
+            <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
+          </div>
+        ) : null}
+
         <SearchAndFilters
           query={query}
           tag={tag}
@@ -117,29 +137,23 @@ export function PondScreen() {
           onTagChange={setTag}
         />
 
-        {isSupabaseConfigured() ? (
-          <div className="mt-3">
-            <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
+        {canvasMode ? null : (
+          <div className="mt-6">
+            <CatchOfTheDay
+              notes={visibleNotes}
+              onOpen={setEditingId}
+              onRecast={recastNote}
+            />
           </div>
-        ) : null}
+        )}
 
-        <div className="mt-3">
-          <CatchOfTheDay
-            notes={notes}
-            visible={visible}
-            seed={seed}
-            narrow={narrow}
-            onOpen={setEditingId}
-            onRecast={recast}
-          />
-        </div>
-
-        <div className={`mt-3 flex min-h-0 flex-1 flex-col ${narrow ? "pb-4" : "pb-6"}`}>
+        <div className="mt-6 min-h-0 flex-1">
           <PondCanvas
             notes={notes}
-            visible={visible}
+            visible={visibleIds}
+            canvasMode={canvasMode}
             onOpen={setEditingId}
-            onRecast={recast}
+            onRecast={() => catchOfTheDay(visibleNotes).forEach((note) => recastNote(note.id))}
             onCapture={openCapture}
           />
         </div>
@@ -147,10 +161,8 @@ export function PondScreen() {
 
       <CaptureSheet
         ref={sheetRef}
-        onSave={({ cat, text, open }) => {
-          const note = addNote({ cat, text, userId: null });
-          if (open) setEditingId(note.id);
-        }}
+        onRelease={(input) => saveSpark(input, false)}
+        onOpenIt={(input) => saveSpark(input, true)}
       />
 
       {editing ? (
@@ -172,3 +184,4 @@ export function PondScreen() {
     </div>
   );
 }
+

@@ -1,25 +1,14 @@
-import { CATS, CATEGORIES, categoryOf, type BlockType, type Cat, type Note, type Species } from "@/lib/notes/types";
+import { isCat, type BlockType, type Cat, type Note } from "@/lib/notes/types";
 
-export { categoryOf as catOf };
-export type { Species };
-
-export function isCat(value: string): value is Cat {
-  return (CATS as readonly string[]).includes(value);
-}
-
-export function speciesVars(species: Species) {
-  const swatch = CATEGORIES.find((item) => item.species === species) ?? CATEGORIES[0]!;
-  return { fill: swatch.fill, mark: swatch.mark };
-}
+export { isCat };
 
 export const MS_DAY = 86_400_000;
 export const MAX_NEGLECT_DAYS = 90;
+export const MAX_NEGLECT_SCALE = 1.2;
 export const CATCH_MIN_DAYS = 7;
-export const CATCH_POOL = 9;
-export const CATCH_WIDE = 4;
-export const CATCH_NARROW = 2;
-export const NARROW_BREAKPOINT = 720;
+export const CATCH_LIMIT = 3;
 export const MAX_FISH_ON_SCREEN = 40;
+export const NARROW_BREAKPOINT = 720;
 
 export type DepthLayer = {
   k: number;
@@ -37,7 +26,31 @@ export const LAYERS: DepthLayer[] = [
 ];
 
 export function layerOf(id: string): DepthLayer {
-  return LAYERS[(id.charCodeAt(id.length - 1) + id.length) % 3];
+  return LAYERS[(id.charCodeAt(id.length - 1) + id.length) % 3]!;
+}
+
+export const FISH_BY_CAT: Record<Cat, { src: string; species: string; width: number }[]> = {
+  "ai art": [
+    { src: "/fish/koi-white.png", species: "Kohaku koi", width: 168 },
+    { src: "/fish/koi-vermilion.png", species: "Vermilion koi", width: 176 },
+    { src: "/fish/koi-blush.png", species: "Blush koi", width: 160 },
+    { src: "/fish/koi-calico.png", species: "Calico koi", width: 144 },
+  ],
+  "vibe coding": [
+    { src: "/fish/tang-blue.png", species: "Blue tang", width: 148 },
+    { src: "/fish/carp-honey.png", species: "Honey carp", width: 128 },
+  ],
+  music: [
+    { src: "/fish/betta-lilac.png", species: "Lilac betta", width: 156 },
+    { src: "/fish/goldfish-orange.png", species: "Orange goldfish", width: 132 },
+  ],
+};
+
+export function fishFor(cat: Cat, id: string) {
+  const list = FISH_BY_CAT[cat];
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash + id.charCodeAt(i) * (i + 1)) % 997;
+  return list[hash % list.length]!;
 }
 
 export function daysNeglected(actedAt: string, now = Date.now()) {
@@ -50,12 +63,13 @@ export function daysIdle(actedAt: string, now = Date.now()) {
   return Math.floor(daysNeglected(actedAt, now));
 }
 
-export function sizeOf(actedAt: string, now = Date.now()) {
-  return 0.44 + (Math.min(daysIdle(actedAt, now), MAX_NEGLECT_DAYS) / MAX_NEGLECT_DAYS) * 0.8;
+export function neglectScale(actedAt: string, now = Date.now()) {
+  const days = Math.min(MAX_NEGLECT_DAYS, daysNeglected(actedAt, now));
+  return 1 + (days / MAX_NEGLECT_DAYS) * (MAX_NEGLECT_SCALE - 1);
 }
 
 export function daysLabel(actedAt: string) {
-  return `${daysIdle(actedAt)}D`;
+  return `${daysIdle(actedAt)}d untouched`;
 }
 
 export function hasBoard(note: Note) {
@@ -83,36 +97,25 @@ export function matchesQuery(title: string, body: string, cat: string, query: st
   );
 }
 
-export function shuffleSeed<T>(items: T[], seed: number): T[] {
+export function catchOfTheDay(notes: Note[], now = Date.now()) {
+  return [...notes]
+    .filter((note) => daysIdle(note.acted_at, now) >= CATCH_MIN_DAYS)
+    .sort((a, b) => daysIdle(b.acted_at, now) - daysIdle(a.acted_at, now))
+    .slice(0, CATCH_LIMIT);
+}
+
+export function sampleFish<T>(items: T[], cap = MAX_FISH_ON_SCREEN): T[] {
+  if (items.length <= cap) return items;
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.abs(Math.floor(Math.sin(seed + i) * 10_000)) % (i + 1);
+    const j = Math.floor(Math.random() * (i + 1));
     const a = copy[i];
     const b = copy[j];
     if (a === undefined || b === undefined) continue;
     copy[i] = b;
     copy[j] = a;
   }
-  return copy;
-}
-
-export function catchOfTheDay(
-  notes: Note[],
-  visible: Set<string>,
-  seed: number,
-  count: number,
-  now = Date.now(),
-) {
-  const ranked = [...notes]
-    .filter((note) => visible.has(note.id) && daysIdle(note.acted_at, now) >= CATCH_MIN_DAYS)
-    .sort((a, b) => daysIdle(b.acted_at, now) - daysIdle(a.acted_at, now))
-    .slice(0, CATCH_POOL);
-  return shuffleSeed(ranked, seed).slice(0, count);
-}
-
-export function sampleFish<T>(items: T[], cap = MAX_FISH_ON_SCREEN): T[] {
-  if (items.length <= cap) return items;
-  return items.slice(0, cap);
+  return copy.slice(0, cap);
 }
 
 export function defaultBlockContent(type: BlockType) {
