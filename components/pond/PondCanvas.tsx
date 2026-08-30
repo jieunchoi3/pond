@@ -20,20 +20,13 @@ type PondCanvasProps = {
   onCapture: () => void;
 };
 
-type Facing = "left" | "right";
-
 type Swim = {
   x: number;
   y: number;
-  heading: number;
-  turn: number;
+  dir: 1 | -1;
   speed: number;
-  cruiseSpeed: number;
-  wanderPhase: number;
-  wanderTheta: number;
-  wanderGoal: number;
-  nextWander: number;
-  facing: Facing;
+  phase: number;
+  bob: number;
   scale: number;
   k: number;
   o: number;
@@ -49,37 +42,8 @@ type Swim = {
 
 type Ripple = { id: number; x: number; y: number };
 
-const MAX_DT = 0.032;
-const STEER_OMEGA = 5.4;
-const MAX_TURN = 3.4;
-const FACE_HYSTERESIS = 0.12;
-const BASE_MARGIN = 110;
-const MARGIN_REF_WIDTH = 160;
+const MAX_DT = 0.048;
 const ASPECT = 0.55;
-const LOOK_AHEAD = 1;
-const WANDER_RADIUS = 0.72;
-
-function shortestDelta(from: number, to: number) {
-  return Math.atan2(Math.sin(to - from), Math.cos(to - from));
-}
-
-function lerpAngle(from: number, to: number, t: number) {
-  return from + shortestDelta(from, to) * t;
-}
-
-function edgeForce(dist: number, margin: number) {
-  if (dist >= margin) return 0;
-  return (margin - Math.max(dist, 0)) / margin;
-}
-
-function clamp(value: number, min: number, max: number) {
-  if (max < min) return (min + max) / 2;
-  return Math.min(max, Math.max(min, value));
-}
-
-function wrapAngle(theta: number) {
-  return Math.atan2(Math.sin(theta), Math.cos(theta));
-}
 
 export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProps) {
   const pondRef = useRef<HTMLDivElement>(null);
@@ -129,41 +93,29 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       const layer = layerOf(note.id);
       const fish = fishFor(note.cat, note.id);
       const scale = neglectScale(note.acted_at);
-      const cruiseSpeed = (62 + ((index * 17) % 34)) * layer.speed;
+      const speed = (26 + ((index * 13) % 18)) * layer.speed;
       const existing = swim.current[note.id];
       if (existing) {
         existing.scale = scale;
         existing.k = layer.k;
         existing.o = layer.o;
         existing.blur = layer.blur;
-        existing.cruiseSpeed = cruiseSpeed;
-        existing.speed = cruiseSpeed;
+        existing.speed = speed;
         existing.width = fish.width;
         existing.left = fish.left;
         existing.right = fish.right;
-        existing.turn ??= 0;
-        existing.wanderTheta ??= 0;
-        existing.wanderGoal ??= 0;
-        existing.nextWander ??= performance.now() + 400;
-        existing.lastSrc ??= "";
-        existing.lastOpacity ??= "";
-        existing.lastFilter ??= "";
+        if (existing.dir !== 1 && existing.dir !== -1) existing.dir = index % 2 === 0 ? 1 : -1;
+        existing.phase ??= (index * 1.7) % (Math.PI * 2);
+        existing.bob ??= 5 + ((index * 3) % 5);
         return;
       }
-      const heading = ((index * 2.399) % (Math.PI * 2)) - Math.PI;
-      const wanderGoal = ((index * 1.13) % 2) - 1;
       swim.current[note.id] = {
         x: 0,
         y: 0,
-        heading,
-        turn: 0,
-        speed: cruiseSpeed,
-        cruiseSpeed,
-        wanderPhase: (index * 1.7) % (Math.PI * 2),
-        wanderTheta: wanderGoal * 0.4,
-        wanderGoal,
-        nextWander: performance.now() + 400 + index * 180,
-        facing: Math.cos(heading) >= 0 ? "right" : "left",
+        dir: index % 2 === 0 ? 1 : -1,
+        speed,
+        phase: (index * 1.7) % (Math.PI * 2),
+        bob: 5 + ((index * 3) % 5),
         scale,
         k: layer.k,
         o: layer.o,
@@ -188,8 +140,8 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       const size = m.scale * m.k;
       const visW = m.width * size;
       const visH = m.width * ASPECT * size;
-      const padX = Math.max(24, visW * 0.6);
-      const padY = Math.max(24, visH * 0.6);
+      const padX = Math.max(24, visW * 0.5);
+      const padY = Math.max(28, visH * 0.55);
       const spanX = Math.max(1, w - padX * 2);
       const spanY = Math.max(1, h - padY * 2);
       m.x = padX + ((index * 97) % spanX);
@@ -197,24 +149,14 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       m.placed = true;
     }
 
-    function clampToPond(m: Swim, w: number, h: number) {
-      const size = m.scale * m.k;
-      const hw = (m.width * size) / 2;
-      const hh = (m.width * ASPECT * size) / 2;
-      m.x = clamp(m.x, hw + 2, w - hw - 2);
-      m.y = clamp(m.y, hh + 2, h - hh - 2);
-    }
-
     function paint(m: Swim, el: HTMLButtonElement, img: HTMLImageElement | null, t: number, reduce: boolean) {
       const size = m.scale * m.k;
       const layoutW = m.width;
-      const layoutH = img?.offsetHeight || layoutW * ASPECT;
+      const layoutH = layoutW * ASPECT;
+      const bob = reduce ? 0 : Math.sin(t * 0.00055 + m.phase) * m.bob;
       const left = m.x - layoutW / 2;
-      const top = m.y - layoutH / 2;
-      const foreshorten = 0.72 + 0.28 * Math.abs(Math.cos(m.heading));
-      const bank = clamp(-m.turn * 9, -14, 14);
-      const tail = reduce ? 0 : Math.sin(t * 0.016 * (m.speed / 50) + m.wanderPhase) * 3.2;
-      el.style.transform = `translate3d(${left}px, ${top}px, 0) rotate(${bank + tail}deg) scale(${size}) scaleX(${foreshorten})`;
+      const top = m.y + bob - layoutH / 2;
+      el.style.transform = `translate3d(${left}px, ${top}px, 0) scale(${size})`;
       const opacity = visibleRef.current.has(el.dataset.noteId ?? "") ? String(m.o) : "0.1";
       if (m.lastOpacity !== opacity) {
         el.style.opacity = opacity;
@@ -228,7 +170,7 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
         m.lastFilter = filter;
       }
       el.style.zIndex = hoverId.current === (el.dataset.noteId ?? "") ? "5" : String(Math.round(m.k * 3));
-      const src = m.facing === "left" ? m.left : m.right;
+      const src = m.dir > 0 ? m.right : m.left;
       if (img && m.lastSrc !== src) {
         img.src = src;
         m.lastSrc = src;
@@ -251,7 +193,6 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       if (!m || !el) return;
       if (bounds.current.w > 0 && bounds.current.h > 0) {
         if (!m.placed) seed(m, index, bounds.current.w, bounds.current.h);
-        else clampToPond(m, bounds.current.w, bounds.current.h);
       }
       paint(m, el, imgs.current[note.id] ?? null, last, reduce);
     });
@@ -266,7 +207,12 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
         const m = swim.current[note.id];
         if (!m) return;
         if (!m.placed || prev.w <= 0 || prev.h <= 0) seed(m, index, w, h);
-        else clampToPond(m, w, h);
+        else {
+          const nx = prev.w > 0 ? m.x * (w / prev.w) : m.x;
+          const ny = prev.h > 0 ? m.y * (h / prev.h) : m.y;
+          m.x = nx;
+          m.y = ny;
+        }
       });
     });
     observer.observe(pond);
@@ -284,50 +230,11 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
         if (!m.placed) seed(m, i, w, h);
 
         if (!reduce) {
-          if (t >= m.nextWander) {
-            m.wanderGoal = (Math.random() * 2 - 1) * 1.15;
-            m.nextWander = t + 1400 + Math.random() * 2600;
-          }
-          const meander = Math.sin(t * 0.00055 + m.wanderPhase) * 0.28;
-          m.wanderTheta += (m.wanderGoal + meander - m.wanderTheta) * Math.min(1, dt * 1.8);
-
-          const desiredX =
-            Math.cos(m.heading) * LOOK_AHEAD + Math.cos(m.heading + m.wanderTheta) * WANDER_RADIUS;
-          const desiredY =
-            Math.sin(m.heading) * LOOK_AHEAD + Math.sin(m.heading + m.wanderTheta) * WANDER_RADIUS;
-          let desired = Math.atan2(desiredY, desiredX);
-
+          m.x += m.dir * m.speed * dt;
           const size = m.scale * m.k;
           const visW = m.width * size;
-          const visH = m.width * ASPECT * size;
-          const margin = BASE_MARGIN * Math.max(0.4, visW / MARGIN_REF_WIDTH);
-          const hw = visW / 2;
-          const hh = visH / 2;
-          const fx = edgeForce(m.x - hw, margin) - edgeForce(w - (m.x + hw), margin);
-          const fy = edgeForce(m.y - hh, margin) - edgeForce(h - (m.y + hh), margin);
-          const force = Math.hypot(fx, fy);
-          if (force > 0.001) {
-            const urgency = Math.min(1, force);
-            desired = lerpAngle(desired, Math.atan2(fy, fx), urgency * urgency);
-          }
-
-          const err = shortestDelta(m.heading, desired);
-          const omega = STEER_OMEGA + force * 3.2;
-          m.turn += (omega * omega * err - 2 * omega * m.turn) * dt;
-          m.turn = clamp(m.turn, -MAX_TURN, MAX_TURN);
-          m.heading = wrapAngle(m.heading + m.turn * dt);
-
-          const pulse = 1 + 0.1 * Math.sin(t * 0.0014 + m.wanderPhase);
-          m.speed += (m.cruiseSpeed * pulse - m.speed) * Math.min(1, dt * 3.2);
-          const step = m.speed * dt;
-          m.x += Math.cos(m.heading) * step;
-          m.y += Math.sin(m.heading) * step;
-          clampToPond(m, w, h);
-
-          const c = Math.cos(m.heading);
-          if (Math.abs(c) > FACE_HYSTERESIS) {
-            m.facing = c > 0 ? "right" : "left";
-          }
+          if (m.dir > 0 && m.x > w + visW * 0.55) m.x = -visW * 0.55;
+          if (m.dir < 0 && m.x < -visW * 0.55) m.x = w + visW * 0.55;
         }
 
         paint(m, el, imgs.current[note.id] ?? null, t, reduce);

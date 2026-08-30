@@ -296,7 +296,7 @@
   line-height: 0;
   cursor: pointer;
   transform-origin: center center;
-  will-change: transform, filter;
+  will-change: transform;
   transition: none;
   transform: translate3d(-9999px, -9999px, 0);
   backface-visibility: hidden;
