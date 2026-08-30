@@ -1,6 +1,5 @@
 import {
   BLOCK_TYPES,
-  isCat,
   type Cat,
   type Note,
   type NoteBlock,
@@ -221,7 +220,8 @@ function isNote(value: unknown): value is Note {
   const note = value as Partial<Note>;
   return (
     typeof note.id === "string" &&
-    isCat(String(note.cat ?? "")) &&
+    typeof note.cat === "string" &&
+    note.cat.trim().length > 0 &&
     typeof note.acted_at === "string" &&
     !Number.isNaN(Date.parse(note.acted_at))
   );
@@ -257,17 +257,22 @@ function isBlock(value: unknown): value is NoteBlock {
   );
 }
 
-export { isCat };
-
-export function addNote(input: { cat: Cat; text: string; userId: string | null }): Note {
+export function addNote(input: {
+  cat: Cat;
+  title?: string;
+  body?: string;
+  text?: string;
+  blocks?: NoteBlock[];
+  userId: string | null;
+}): Note {
   const now = new Date().toISOString();
   const note: Note = {
     id: crypto.randomUUID(),
     user_id: input.userId,
     cat: input.cat,
-    title: input.text.trim(),
-    body: "",
-    blocks: [],
+    title: (input.title ?? input.text ?? "").trim(),
+    body: (input.body ?? "").trim(),
+    blocks: input.blocks ?? [],
     created_at: now,
     acted_at: now,
     pending: true,
@@ -300,6 +305,20 @@ export function markActed(id: string) {
 
 export function recastNote(id: string) {
   markActed(id);
+}
+
+export function patchNotesCat(from: string, to: string) {
+  const next = getNotesSnapshot().map((note) =>
+    note.cat === from ? { ...note, cat: to, pending: true } : note,
+  );
+  persist(next);
+  for (const note of next) {
+    if (note.cat === to && note.pending) {
+      queueMicrotask(() => {
+        void syncNote(note);
+      });
+    }
+  }
 }
 
 export function deleteNote(id: string) {
@@ -413,10 +432,10 @@ export async function pullNotes() {
   if (error || !data) return;
   mergeRemote(
     data
-      .filter((row) => isCat(row.cat))
+      .filter((row) => typeof row.cat === "string" && row.cat.trim().length > 0)
       .map((row) => ({
         ...row,
-        cat: row.cat as Cat,
+        cat: row.cat,
         blocks: Array.isArray(row.blocks) ? row.blocks.filter(isBlock) : [],
         pending: false,
       })),

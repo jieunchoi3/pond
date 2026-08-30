@@ -10,6 +10,7 @@ import {
   neglectScale,
   sampleFish,
 } from "@/lib/notes/fish";
+import { usePondCategories } from "@/lib/notes/categories";
 import type { Note } from "@/lib/notes/types";
 
 type PondCanvasProps = {
@@ -75,6 +76,8 @@ function wrapAngle(theta: number) {
 
 export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProps) {
   const pondRef = useRef<HTMLDivElement>(null);
+  const categories = usePondCategories();
+  const fishRev = categories.map((item) => `${item.id}:${item.fishKey}`).join("|");
   const nodes = useRef<Record<string, HTMLButtonElement | null>>({});
   const imgs = useRef<Record<string, HTMLImageElement | null>>({});
   const swim = useRef<Record<string, Swim>>({});
@@ -291,7 +294,7 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
       observer.disconnect();
       motionQuery.removeEventListener("change", onMotion);
     };
-  }, [shown]);
+  }, [shown, fishRev]);
 
   function tapWater(event: MouseEvent<HTMLDivElement>) {
     const pond = pondRef.current;

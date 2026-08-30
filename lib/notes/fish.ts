@@ -1,4 +1,5 @@
 import { isCat, type BlockType, type Cat, type Note } from "@/lib/notes/types";
+import { getCategoriesSnapshot } from "@/lib/notes/categories";
 
 export { isCat };
 
@@ -37,66 +38,61 @@ export type FishKind = {
   right: string;
 };
 
-export const FISH_BY_CAT: Record<Cat, FishKind[]> = {
-  "ai art": [
-    {
-      key: "fish-pink",
-      species: "Pink koi",
-      width: 168,
-      left: "/fish/fish-pink-left.png",
-      right: "/fish/fish-pink-right.png",
-    },
-    {
-      key: "fish-purple",
-      species: "Purple koi",
-      width: 176,
-      left: "/fish/fish-purple-left.png",
-      right: "/fish/fish-purple-right.png",
-    },
-  ],
-  "vibe coding": [
-    {
-      key: "fish-blue",
-      species: "Blue tang",
-      width: 160,
-      left: "/fish/fish-blue-left.png",
-      right: "/fish/fish-blue-right.png",
-    },
-    {
-      key: "fish-green",
-      species: "Green carp",
-      width: 152,
-      left: "/fish/fish-green-left.png",
-      right: "/fish/fish-green-right.png",
-    },
-  ],
-  music: [
-    {
-      key: "goldfish-yellow",
-      species: "Yellow goldfish",
-      width: 148,
-      left: "/fish/goldfish-yellow-left.png",
-      right: "/fish/goldfish-yellow-right.png",
-    },
-    {
-      key: "goldfish-red",
-      species: "Red goldfish",
-      width: 140,
-      left: "/fish/goldfish-red-left.png",
-      right: "/fish/goldfish-red-right.png",
-    },
-  ],
-};
+function directional(key: string, species: string, width: number): FishKind {
+  return {
+    key,
+    species,
+    width,
+    left: `/fish/${key}-left.png`,
+    right: `/fish/${key}-right.png`,
+  };
+}
 
-export const ALL_FISH_SRCS = Object.values(FISH_BY_CAT).flatMap((list) =>
-  list.flatMap((fish) => [fish.left, fish.right]),
+function still(key: string, species: string, width: number): FishKind {
+  const src = `/fish/${key}.png`;
+  return { key, species, width, left: src, right: src };
+}
+
+export const FISH_SPECIES: FishKind[] = [
+  directional("goldfish-yellow", "Yellow goldfish", 148),
+  directional("goldfish-red", "Red goldfish", 140),
+  directional("fish-green", "Green carp", 152),
+  directional("fish-blue", "Blue tang", 160),
+  directional("fish-pink", "Pink koi", 168),
+  directional("fish-purple", "Purple koi", 176),
+  still("goldfish-orange", "Orange goldfish", 150),
+  still("koi-white", "White koi", 168),
+  still("koi-calico", "Calico koi", 170),
+  still("koi-vermilion", "Vermilion koi", 168),
+  still("koi-blush", "Blush koi", 166),
+  still("betta-lilac", "Lilac betta", 156),
+  still("carp-honey", "Honey carp", 158),
+  still("tang-blue", "Blue tang", 160),
+];
+
+export const FISH_BY_KEY: Record<string, FishKind> = Object.fromEntries(
+  FISH_SPECIES.map((fish) => [fish.key, fish]),
 );
 
+export const ALL_FISH_SRCS = [
+  ...new Set(FISH_SPECIES.flatMap((fish) => [fish.left, fish.right])),
+];
+
+export function speciesOf(key: string) {
+  return FISH_BY_KEY[key] ?? FISH_SPECIES[0]!;
+}
+
+export function unusedFishKey(used: string[]) {
+  const next = FISH_SPECIES.find((fish) => !used.includes(fish.key));
+  return (next ?? FISH_SPECIES[used.length % FISH_SPECIES.length]!).key;
+}
+
 export function fishFor(cat: Cat, id: string) {
-  const list = FISH_BY_CAT[cat];
+  const match = getCategoriesSnapshot().find((item) => item.id === cat);
+  if (match) return speciesOf(match.fishKey);
   let hash = 0;
   for (let i = 0; i < id.length; i += 1) hash = (hash + id.charCodeAt(i) * (i + 1)) % 997;
-  return list[hash % list.length]!;
+  return FISH_SPECIES[hash % FISH_SPECIES.length]!;
 }
 
 export function daysNeglected(actedAt: string, now = Date.now()) {

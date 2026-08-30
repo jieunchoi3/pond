@@ -5,12 +5,13 @@ import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
 import { Fish } from "@/components/pond/Fish";
 import { daysIdle, hasBoard } from "@/lib/notes/fish";
+import { categoryName, usePondCategories } from "@/lib/notes/categories";
 import { type BlockType, type Note, type NoteBlock } from "@/lib/notes/types";
 
 type NoteEditorProps = {
   note: Note;
   narrow: boolean;
-  onChange: (patch: Partial<Pick<Note, "title" | "body" | "blocks">>) => void;
+  onChange: (patch: Partial<Pick<Note, "title" | "body" | "cat" | "blocks">>) => void;
   onActed: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -34,6 +35,7 @@ export function NoteEditor({
   const [split, setSplit] = useState(hasBoard(note) ? 0.42 : 0.76);
   const wrapRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
+  const categories = usePondCategories();
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -85,8 +87,26 @@ export function NoteEditor({
       <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3.5">
         <div className="flex items-center gap-2">
           <Fish cat={note.cat} id={note.id} scale={0.45} />
+          <label className="sr-only" htmlFor="note-cat">
+            Category
+          </label>
+          <select
+            id="note-cat"
+            value={note.cat}
+            onChange={(event) => onChange({ cat: event.target.value })}
+            className="type-label bg-transparent tracking-[0.08em] text-ink-soft outline-none"
+          >
+            {categories.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+            {categories.some((item) => item.id === note.cat) ? null : (
+              <option value={note.cat}>{categoryName(note.cat)}</option>
+            )}
+          </select>
           <span className="type-label tracking-[0.08em] text-ink-soft">
-            {note.cat.toUpperCase()} · {daysIdle(note.acted_at)}d
+            · {daysIdle(note.acted_at)}d
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -132,6 +152,7 @@ export function NoteEditor({
         >
           <span className="h-1 w-8 shrink-0 rounded-pill bg-ink/18" />
           <EditorToolbar
+            expanded={split < 0.3}
             onAdd={add}
             onExpand={() => setSplit(split > 0.3 ? 0.14 : 0.5)}
           />

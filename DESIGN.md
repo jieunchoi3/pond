@@ -169,6 +169,7 @@ The build uses directional pairs: `{species}-left.png` / `{species}-right.png`.
 | Figma name | Component |
 |---|---|
 | Frame 1367 / 1368 | `PondScreen` |
+| Frame 1319 | `CategorySidebar` |
 | Frame 1377 | `SearchAndFilters` |
 | Frame 1384 / 1400 | `CatchOfTheDay` |
 | Frame 1388–1393 | `CatchCard` |

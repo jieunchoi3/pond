@@ -4,9 +4,10 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { Fish } from "@/components/pond/Fish";
 import { searchNotes, snippetAround } from "@/lib/notes/fish";
-import { CATS, type Cat, type Note } from "@/lib/notes/types";
+import { usePondCategories } from "@/lib/notes/categories";
+import type { Note } from "@/lib/notes/types";
 
-export type FilterTag = "all" | Cat;
+export type FilterTag = "all" | string;
 
 type SearchAndFiltersProps = {
   query: string;
@@ -25,6 +26,7 @@ export function SearchAndFilters({
   onTagChange,
   onPickNote,
 }: SearchAndFiltersProps) {
+  const categories = usePondCategories();
   const listId = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -35,10 +37,6 @@ export function SearchAndFilters({
     [notes, tag],
   );
   const hits = useMemo(() => searchNotes(scoped, query, 8), [scoped, query]);
-
-  useEffect(() => {
-    setActive(0);
-  }, [query, tag]);
 
   useEffect(() => {
     function onPointer(event: PointerEvent) {
@@ -93,6 +91,7 @@ export function SearchAndFilters({
             onChange={(event) => {
               onQueryChange(event.target.value);
               setOpen(true);
+              setActive(0);
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
@@ -157,19 +156,19 @@ export function SearchAndFilters({
         >
           ALL
         </button>
-        {CATS.map((item) => {
-          const selected = item === tag;
+        {categories.map((item) => {
+          const selected = item.id === tag;
           return (
             <button
-              key={item}
+              key={item.id}
               type="button"
-              onClick={() => onTagChange(item)}
+              onClick={() => onTagChange(item.id)}
               aria-pressed={selected}
               className={`type-label rounded-pill px-4 py-2 ${
                 selected ? "bg-accent text-surface" : "bg-surface-2 text-ink"
               }`}
             >
-              {item}
+              {item.name}
             </button>
           );
         })}

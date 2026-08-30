@@ -1,20 +1,21 @@
-export const CATS = ["ai art", "vibe coding", "music"] as const;
+export type Cat = string;
 
-export type Cat = (typeof CATS)[number];
-
-export type Category = {
-  id: Cat;
-  name: Cat;
+export type PondCategory = {
+  id: string;
+  name: string;
+  fishKey: string;
 };
 
-export const CATEGORIES: Category[] = CATS.map((id) => ({ id, name: id }));
+export const DEFAULT_CATEGORIES: PondCategory[] = [
+  { id: "ai art", name: "ai art", fishKey: "goldfish-yellow" },
+  { id: "vibe coding", name: "vibe coding", fishKey: "goldfish-red" },
+  { id: "music", name: "music", fishKey: "fish-green" },
+];
 
-export function categoryOf(id: string): Category {
-  return CATEGORIES.find((item) => item.id === id) ?? CATEGORIES[0]!;
-}
+export const CATS = DEFAULT_CATEGORIES.map((item) => item.id);
 
 export function isCat(value: string): value is Cat {
-  return (CATS as readonly string[]).includes(value);
+  return value.trim().length > 0;
 }
 
 export const BLOCK_TYPES = ["colour", "image", "video", "voice"] as const;

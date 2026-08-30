@@ -1,7 +1,18 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { CATS, type Cat } from "@/lib/notes/types";
+import { BoardCard } from "@/components/pond/BoardCard";
+import { EditorToolbar } from "@/components/pond/EditorToolbar";
+import { defaultBlock } from "@/lib/notes/fish";
+import { usePondCategories } from "@/lib/notes/categories";
+import { type BlockType, type Cat, type NoteBlock } from "@/lib/notes/types";
+
+export type CaptureDraft = {
+  cat: Cat;
+  title: string;
+  body: string;
+  blocks: NoteBlock[];
+};
 
 export type CaptureSheetHandle = {
   open: () => number;
@@ -9,16 +20,21 @@ export type CaptureSheetHandle = {
 };
 
 type CaptureSheetProps = {
-  onRelease: (input: { cat: Cat; text: string }) => void;
-  onOpenIt?: (input: { cat: Cat; text: string }) => void;
+  defaultCat: Cat;
+  onRelease: (input: CaptureDraft) => void;
 };
 
 export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
-  function CaptureSheet({ onRelease, onOpenIt }, ref) {
+  function CaptureSheet({ defaultCat, onRelease }, ref) {
+    const categories = usePondCategories();
     const rootRef = useRef<HTMLDivElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [cat, setCat] = useState<Cat>("vibe coding");
-    const [draft, setDraft] = useState("");
+    const titleRef = useRef<HTMLInputElement>(null);
+    const boardRef = useRef<HTMLDivElement>(null);
+    const [cat, setCat] = useState<Cat>(defaultCat);
+    const [expanded, setExpanded] = useState(false);
+    const [title, setTitle] = useState("");
+    const [body, setBody] = useState("");
+    const [blocks, setBlocks] = useState<NoteBlock[]>([]);
 
     function show() {
       const root = rootRef.current;
@@ -32,29 +48,48 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
       if (!root) return;
       root.dataset.open = "false";
       root.setAttribute("aria-hidden", "true");
+      setExpanded(false);
+      setTitle("");
+      setBody("");
+      setBlocks([]);
     }
 
     useImperativeHandle(ref, () => ({
       open() {
         const started = performance.now();
+        setCat(defaultCat);
         show();
-        textareaRef.current?.focus();
+        titleRef.current?.focus();
         return performance.now() - started;
       },
       close() {
         hide();
-        setDraft("");
       },
     }));
 
-    function commit(openEditor: boolean) {
-      const text = draft.trim();
+    function commit() {
+      const draft: CaptureDraft = {
+        cat,
+        title: title.trim(),
+        body: body.trim(),
+        blocks,
+      };
       hide();
-      if (!text && !openEditor) return;
-      const payload = { cat, text };
-      if (openEditor && onOpenIt) onOpenIt(payload);
-      else if (text) onRelease(payload);
-      setDraft("");
+      if (!draft.title && !draft.body && draft.blocks.length === 0) return;
+      onRelease(draft);
+    }
+
+    function add(type: BlockType) {
+      setBlocks((list) => [...list, defaultBlock(type, list.length)]);
+      if (!expanded) setExpanded(true);
+    }
+
+    function update(block: NoteBlock) {
+      setBlocks((list) => list.map((item) => (item.id === block.id ? block : item)));
+    }
+
+    function drop(id: string) {
+      setBlocks((list) => list.filter((item) => item.id !== id));
     }
 
     return (
@@ -62,69 +97,105 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
         ref={rootRef}
         data-open="false"
         aria-hidden="true"
-        className="fixed inset-0 z-40 flex flex-col bg-surface p-6 data-[open=false]:pointer-events-none data-[open=false]:opacity-0"
+        className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(31,42,40,0.45)] p-6 data-[open=false]:pointer-events-none data-[open=false]:opacity-0"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) commit();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.stopPropagation();
+            commit();
+          }
+        }}
       >
-        <div className="mx-auto flex h-full w-full max-w-(--page-max) flex-col">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <p className="type-label text-ink-soft">new spark</p>
-            <button
-              type="button"
-              onClick={() => {
-                hide();
-                setDraft("");
+        <article
+          role="dialog"
+          aria-label="Add your original spark"
+          className={`flex flex-col overflow-hidden rounded-input bg-surface shadow-pond-lg transition-[width,height] duration-200 ${
+            expanded
+              ? "h-[calc(100dvh-48px)] w-[min(1392px,calc(100vw-48px))]"
+              : "h-[min(640px,80dvh)] w-[min(920px,92vw)]"
+          }`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className={`flex min-h-0 flex-col px-8 pt-8 ${expanded ? "flex-none" : "flex-1"}`}>
+            <div className="mb-4 flex flex-wrap gap-2">
+              {categories.map((item) => {
+                const selected = item.id === cat;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setCat(item.id)}
+                    aria-pressed={selected}
+                    className={`type-label rounded-pill px-3 py-1.5 ${
+                      selected ? "bg-accent text-surface" : "bg-surface-2 text-ink"
+                    }`}
+                  >
+                    {item.name}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              ref={titleRef}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Add your original spark"
+              className="type-note-title w-full border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft"
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  commit();
+                }
               }}
-              className="type-label text-ink-soft"
+            />
+            <textarea
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              placeholder="add your ideas…"
+              className={`type-body mt-1 w-full resize-none border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft ${
+                expanded ? "h-28" : "min-h-0 flex-1"
+              }`}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  commit();
+                }
+              }}
+            />
+          </div>
+
+          <div className="flex items-center gap-3 border-b border-line px-6 py-3">
+            <EditorToolbar
+              expanded={expanded}
+              onAdd={add}
+              onExpand={() => setExpanded((value) => !value)}
+            />
+          </div>
+
+          {expanded || blocks.length > 0 ? (
+            <div
+              ref={boardRef}
+              className={`min-h-0 flex-1 overflow-auto ${
+                expanded ? "pond-board relative" : "flex flex-wrap content-start gap-3 p-6"
+              }`}
             >
-              Close
-            </button>
-          </div>
-
-          <textarea
-            ref={textareaRef}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="Add your original spark"
-            className="type-body min-h-0 w-full flex-1 resize-none bg-transparent px-6 py-3 text-ink outline-none placeholder:text-ink-soft"
-          />
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {CATS.map((item) => {
-              const selected = item === cat;
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setCat(item)}
-                  aria-pressed={selected}
-                  className={`type-label rounded-pill px-4 py-2 ${
-                    selected ? "bg-accent text-surface" : "bg-surface-2 text-ink"
-                  }`}
-                >
-                  {item}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            {onOpenIt ? (
-              <button
-                type="button"
-                onClick={() => commit(true)}
-                className="type-label h-12 flex-1 rounded-pill border border-line text-ink"
-              >
-                Open it
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => commit(false)}
-              className="type-label h-12 flex-1 rounded-pill bg-accent text-surface"
-            >
-              Release
-            </button>
-          </div>
-        </div>
+              {blocks.map((block) => (
+                <BoardCard
+                  key={block.id}
+                  block={block}
+                  boardRef={boardRef}
+                  floating={expanded}
+                  onChange={update}
+                  onDelete={drop}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="h-4" />
+          )}
+        </article>
       </div>
     );
   },

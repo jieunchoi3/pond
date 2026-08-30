@@ -27,10 +27,11 @@ Open [http://localhost:43217](http://localhost:43217).
 
 ## What’s on screen
 
-- **Search + chips** — `search the water...`, then ALL / ai art / vibe coding / music. Selected chip uses the vermilion accent.
-- **Catch of the day** — white card with the three most-neglected notes (≥ 7 days). Recast marks them acted (throws them back). The left lily tab hides the panel so the pond fills the rest of the screen.
+- **Sidebar** — Frame 1319 category list. Each row is a fish + name. Click a row (or a chip) to filter. Double-click a name to rename, click the fish to pick another colour, click an empty slot to add a category. The chevron on the spine collapses the bar.
+- **Search + chips** — `search the water...`, then ALL plus every category. Selected chip uses the vermilion accent. Chips stay in sync with the sidebar.
+- **Catch of the day** — white card with the three most-neglected notes (≥ 7 days). Recast marks them acted (throws them back).
 - **Pond** — water gradient, Figma PNG fish, size = neglect (cap 90 days / 1.2×), three depth layers, rAF drift. Filtered-out fish stay dim. One 72px accent FAB in the pond.
-- **Capture** — always-mounted full-screen sheet. Tap + focuses the textarea on the same gesture (target: under 400ms). **Open it** saves and opens the editor; **Release** saves only.
+- **Capture** — tap + and a white idea sheet opens over the dimmed pond (title, body, canvas-mode toolbar). The same tap focuses the title. Expand fills the screen. Click the dim pond or press Escape to release the spark into the water.
 - **Editor** — title, body, canvas-mode toolbar (mic / image / YouTube + expand), dotted board with floating cards. **Acted on it** resets neglect. **Release** deletes the note.
 
 `pond-prototype.jsx` is animation reference only. Do not import it.
