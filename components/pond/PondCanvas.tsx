@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { CaptureButton } from "@/components/capture/CaptureButton";
 import { Fish } from "@/components/pond/Fish";
 import { fishFor, hasBoard, layerOf, neglectScale, sampleFish } from "@/lib/notes/fish";
@@ -33,19 +33,20 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const shown = useMemo(() => sampleFish(notes), [notes]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     shown.forEach((note, index) => {
       const layer = layerOf(note.id);
       const scale = neglectScale(note.acted_at) * layer.k;
+      const prev = motion.current[note.id];
       motion.current[note.id] = {
-        x: (index * 37) % 100,
-        y: 12 + ((index * 53) % 74),
-        vx: (0.012 + ((index * 7) % 10) / 400) * layer.speed * (index % 2 ? 1 : -1),
-        vy: (0.006 + ((index * 3) % 7) / 500) * layer.speed * (index % 3 === 0 ? 1 : -1),
+        x: prev?.x ?? (index * 37) % 100,
+        y: prev?.y ?? 12 + ((index * 53) % 74),
+        vx: prev?.vx ?? (0.012 + ((index * 7) % 10) / 400) * layer.speed * (index % 2 ? 1 : -1),
+        vy: prev?.vy ?? (0.006 + ((index * 3) % 7) / 500) * layer.speed * (index % 3 === 0 ? 1 : -1),
         scale,
         opacity: layer.o,
         blur: layer.blur,
-        bob: 0,
+        bob: prev?.bob ?? 0,
       };
     });
 
@@ -55,22 +56,24 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
     function paint(id: string, y: number) {
       const m = motion.current[id];
       const el = nodes.current[id];
-      if (!m || !el) return;
+      const pond = pondRef.current;
+      if (!m || !el || !pond) return;
       const face = m.vx < 0 ? m.scale : -m.scale;
-      el.style.transform = `translate3d(${m.x}%, ${y}%, 0) scale(${face}, ${m.scale})`;
+      const xPx = (m.x / 100) * pond.clientWidth;
+      const yPx = (y / 100) * pond.clientHeight;
+      el.style.transform = `translate3d(${xPx}px, ${yPx}px, 0) scale(${face}, ${m.scale})`;
       el.style.opacity = String(m.opacity);
       el.style.filter = m.blur
         ? `drop-shadow(var(--shadow-sm)) blur(${m.blur}px)`
         : "drop-shadow(var(--shadow-sm))";
     }
 
-    if (reduce) {
-      for (const note of shown) {
-        const m = motion.current[note.id];
-        if (m) paint(note.id, m.y);
-      }
-      return;
+    for (const note of shown) {
+      const m = motion.current[note.id];
+      if (m) paint(note.id, m.y);
     }
+
+    if (reduce) return;
 
     const tick = () => {
       for (const note of shown) {
@@ -132,7 +135,7 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
             aria-label={`${fish.species}: ${note.title || "Untitled spark"}`}
           >
             <span className="relative block">
-              <Fish cat={note.cat} id={note.id} dim={dim} layer={layerOf(note.id)} />
+              <Fish cat={note.cat} id={note.id} dim={dim} />
               {hasBoard(note) && !dim ? (
                 <span className="absolute top-[-5px] right-1.5 size-1.5 rounded-pill bg-surface" />
               ) : null}
