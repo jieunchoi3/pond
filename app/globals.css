@@ -111,17 +111,6 @@
   --text-caption: 12px;
   --size-fab: 72px;
   --page-max: 1392px;
-  --fish-koi-fill: #f2f0ea;
-  --fish-koi-mark: #e4652f;
-  --fish-tang-fill: #4e86b8;
-  --fish-tang-mark: #f2c14e;
-  --fish-betta-fill: #cfc6ec;
-  --fish-betta-mark: #9c8fd4;
-  --fish-goldfish-fill: #f0913c;
-  --fish-goldfish-mark: #d9631e;
-  --lily-a: #6e9e74;
-  --lily-b: #8fb98a;
-  --scrim: rgba(25, 45, 45, 0.32);
 
   --background: var(--surface);
   --foreground: var(--ink);

@@ -19,7 +19,7 @@ export function CatchCard({ note, onOpen }: CatchCardProps) {
     >
       <div className="flex items-center gap-2">
         <Fish species={cat.species} fill={cat.fill} mark={cat.mark} scale={0.2} />
-        <span className="type-caption text-accent">{daysLabel(note.acted_at)}</span>
+        <span className="type-caption !text-accent">{daysLabel(note.acted_at)}</span>
       </div>
       <h3 className="type-title mt-1.5">{note.title || "Untitled spark"}</h3>
       <p className="type-label mt-1 line-clamp-3 text-ink-soft">{note.body}</p>

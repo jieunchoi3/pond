@@ -108,8 +108,8 @@ export function PondScreen() {
   }
 
   return (
-    <div ref={rootRef} className="relative flex min-h-dvh flex-col bg-water-1">
-      <div className={`mx-auto flex min-h-dvh w-full max-w-(--page-max) flex-col ${gutter}`}>
+    <div ref={rootRef} className="relative flex h-dvh flex-col overflow-hidden bg-water-1">
+      <div className={`mx-auto flex h-full w-full max-w-(--page-max) flex-col ${gutter}`}>
         <SearchAndFilters
           query={query}
           tag={tag}
@@ -134,7 +134,7 @@ export function PondScreen() {
           />
         </div>
 
-        <div className={`mt-3 min-h-0 flex-1 ${narrow ? "pb-4" : "pb-6"}`}>
+        <div className={`mt-3 flex min-h-0 flex-1 flex-col ${narrow ? "pb-4" : "pb-6"}`}>
           <PondCanvas
             notes={notes}
             visible={visible}
