@@ -40,10 +40,15 @@ function isPondCategory(value: unknown): value is PondCategory {
   );
 }
 
-function persist(next: PondCategory[]) {
+function persist(next: PondCategory[], sync = true) {
   snapshot = next;
   window.localStorage.setItem(KEY, JSON.stringify(next));
   emit();
+  if (sync) {
+    queueMicrotask(() => {
+      void import("@/lib/notes/sync").then((mod) => mod.schedulePondSync());
+    });
+  }
 }
 
 export function subscribeCategories(onStoreChange: () => void) {
@@ -121,6 +126,11 @@ export function setCategoryFish(id: string, fishKey: string) {
   persist(
     getCategoriesSnapshot().map((item) => (item.id === id ? { ...item, fishKey } : item)),
   );
+}
+
+export function applyRemoteCategories(next: PondCategory[]) {
+  if (next.length === 0) return;
+  persist(next, false);
 }
 
 export function deleteCategory(id: string): PondCategory | null {

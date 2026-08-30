@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 import {
   CaptureSheet,
   type CaptureSheetHandle,
@@ -20,17 +19,14 @@ import { dropPin, togglePin, usePinnedIds } from "@/lib/notes/pins";
 import {
   addNote,
   deleteNote,
-  ensurePond,
-  flushOutbox,
   getNotesSnapshot,
   getServerNotesSnapshot,
   markActed,
   patchNote,
-  pullNotes,
   recastNote,
   subscribeNotes,
 } from "@/lib/notes/store";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { hydratePond, refreshPondFromCloud } from "@/lib/notes/sync";
 import { usePondCategories } from "@/lib/notes/categories";
 
 export function PondScreen() {
@@ -46,40 +42,19 @@ export function PondScreen() {
   const [tag, setTag] = useState<FilterTag>("all");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
   const selectedTag =
     tag === "all" || categories.some((item) => item.id === tag) ? tag : "all";
 
   useEffect(() => {
-    const supabase = createClient();
-    if (!supabase) return;
-    const client = supabase;
-    let cancelled = false;
-
-    async function hydrate(userId: string | null) {
-      if (!userId) {
-        setEmail(null);
-        return;
-      }
-      const { data } = await client.auth.getUser();
-      if (cancelled) return;
-      setEmail(data.user?.email ?? null);
-      await ensurePond();
-      await flushOutbox();
-      await pullNotes();
-    }
-
-    client.auth.getSession().then(({ data }) => {
-      if (!cancelled) void hydrate(data.session?.user.id ?? null);
-    });
-    const {
-      data: { subscription },
-    } = client.auth.onAuthStateChange((_event, session) => {
-      void hydrate(session?.user.id ?? null);
-    });
+    void hydratePond();
+    const onVis = () => {
+      if (document.visibilityState === "visible") void refreshPondFromCloud();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
     return () => {
-      cancelled = true;
-      subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
     };
   }, []);
 
@@ -213,10 +188,6 @@ export function PondScreen() {
           />
         ) : (
           <>
-            {isSupabaseConfigured() ? (
-              <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
-            ) : null}
-
             <SearchAndFilters
               query={query}
               tag={selectedTag}

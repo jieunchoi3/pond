@@ -100,6 +100,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      pond_state: {
+        Row: {
+          id: string;
+          notes: Note[];
+          categories: PondCategory[];
+          pins: string[];
+          ready: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          notes?: Note[];
+          categories?: PondCategory[];
+          pins?: string[];
+          ready?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          notes?: Note[];
+          categories?: PondCategory[];
+          pins?: string[];
+          ready?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

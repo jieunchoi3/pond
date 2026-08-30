@@ -1,14 +1,13 @@
-import {
-  BLOCK_TYPES,
-  type Cat,
-  type Note,
-  type NoteBlock,
-} from "@/lib/notes/types";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { type Cat, type Note, type NoteBlock } from "@/lib/notes/types";
 
 const NOTES_KEY = "pond.notes.v4";
-const OUTBOX_KEY = "pond.outbox.v4";
 const EVENT = "pond-notes";
+
+function requestSync() {
+  queueMicrotask(() => {
+    void import("@/lib/notes/sync").then((mod) => mod.schedulePondSync());
+  });
+}
 
 let snapshot: Note[] = [];
 let hydrated = false;
@@ -28,10 +27,11 @@ function readJson<T>(key: string, fallback: T): T {
   }
 }
 
-function persist(notes: Note[]) {
+function persist(notes: Note[], sync = true) {
   snapshot = notes;
   window.localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
   emit();
+  if (sync) requestSync();
 }
 
 export function subscribeNotes(onStoreChange: () => void) {
@@ -215,7 +215,7 @@ const SEED: Note[] = [
   },
 ];
 
-function isNote(value: unknown): value is Note {
+export function isNoteRecord(value: unknown): value is Note {
   if (!value || typeof value !== "object") return false;
   const note = value as Partial<Note>;
   return (
@@ -230,7 +230,7 @@ function isNote(value: unknown): value is Note {
 export function getNotesSnapshot(): Note[] {
   if (!hydrated && typeof window !== "undefined") {
     const stored = readJson<unknown>(NOTES_KEY, []);
-    const valid = Array.isArray(stored) ? stored.filter(isNote) : [];
+    const valid = Array.isArray(stored) ? stored.filter(isNoteRecord) : [];
     snapshot = valid.length > 0 ? valid : SEED;
     if (valid.length === 0) {
       window.localStorage.setItem(NOTES_KEY, JSON.stringify(SEED));
@@ -242,19 +242,6 @@ export function getNotesSnapshot(): Note[] {
 
 export function getServerNotesSnapshot(): Note[] {
   return SEED;
-}
-
-function isBlock(value: unknown): value is NoteBlock {
-  if (!value || typeof value !== "object") return false;
-  const block = value as Partial<NoteBlock>;
-  return (
-    typeof block.id === "string" &&
-    BLOCK_TYPES.includes(block.type as NoteBlock["type"]) &&
-    typeof block.content === "string" &&
-    typeof block.x === "number" &&
-    typeof block.y === "number" &&
-    typeof block.w === "number"
-  );
 }
 
 export function addNote(input: {
@@ -278,17 +265,11 @@ export function addNote(input: {
     pending: true,
   };
   persist([...getNotesSnapshot(), note]);
-  queueMicrotask(() => {
-    void syncNote(note);
-  });
   return note;
 }
 
 function writeNote(next: Note) {
   persist(getNotesSnapshot().map((note) => (note.id === next.id ? next : note)));
-  queueMicrotask(() => {
-    void syncNote(next);
-  });
 }
 
 export function patchNote(id: string, patch: Partial<Pick<Note, "title" | "body" | "cat" | "blocks">>) {
@@ -312,139 +293,12 @@ export function patchNotesCat(from: string, to: string) {
     note.cat === from ? { ...note, cat: to, pending: true } : note,
   );
   persist(next);
-  for (const note of next) {
-    if (note.cat === to && note.pending) {
-      queueMicrotask(() => {
-        void syncNote(note);
-      });
-    }
-  }
 }
 
 export function deleteNote(id: string) {
   persist(getNotesSnapshot().filter((note) => note.id !== id));
-  queueMicrotask(() => {
-    void removeRemote(id);
-  });
 }
 
-export function mergeRemote(rows: Note[]) {
-  const local = getNotesSnapshot();
-  const byId = new Map(local.map((note) => [note.id, note]));
-  for (const row of rows) {
-    const existing = byId.get(row.id);
-    if (!existing || existing.created_at <= row.created_at) {
-      byId.set(row.id, { ...row, pending: false });
-    }
-  }
-  const merged = [...byId.values()].sort(
-    (a, b) => +new Date(b.created_at) - +new Date(a.created_at),
-  );
-  persist(merged);
-}
-
-function queueOutbox(note: Note) {
-  const box = readJson<Note[]>(OUTBOX_KEY, []);
-  if (!box.some((item) => item.id === note.id)) {
-    box.push(note);
-    window.localStorage.setItem(OUTBOX_KEY, JSON.stringify(box));
-  }
-}
-
-function clearOutboxItem(id: string) {
-  const box = readJson<Note[]>(OUTBOX_KEY, []).filter((item) => item.id !== id);
-  window.localStorage.setItem(OUTBOX_KEY, JSON.stringify(box));
-}
-
-export async function syncNote(note: Note): Promise<"synced" | "queued" | "skipped"> {
-  if (!isSupabaseConfigured()) {
-    queueOutbox(note);
-    return "queued";
-  }
-  const supabase = createClient();
-  if (!supabase) {
-    queueOutbox(note);
-    return "queued";
-  }
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    queueOutbox(note);
-    return "queued";
-  }
-
-  const { error } = await supabase.from("notes").upsert({
-    id: note.id,
-    user_id: user.id,
-    cat: note.cat,
-    title: note.title,
-    body: note.body,
-    blocks: note.blocks,
-    created_at: note.created_at,
-    acted_at: note.acted_at,
-  });
-
-  if (error) {
-    queueOutbox(note);
-    return "queued";
-  }
-
-  clearOutboxItem(note.id);
-  persist(
-    getNotesSnapshot().map((item) =>
-      item.id === note.id ? { ...item, user_id: user.id, pending: false } : item,
-    ),
-  );
-  return "synced";
-}
-
-async function removeRemote(id: string) {
-  const supabase = createClient();
-  if (!supabase) return;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-  await supabase.from("notes").delete().eq("id", id);
-}
-
-export async function ensurePond() {
-  const supabase = createClient();
-  if (!supabase) return;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-  const { data } = await supabase.from("ponds").select("id").limit(1);
-  if (!data?.length) {
-    await supabase.from("ponds").insert({ name: "Pond", user_id: user.id });
-  }
-}
-
-export async function pullNotes() {
-  const supabase = createClient();
-  if (!supabase) return;
-  const { data, error } = await supabase
-    .from("notes")
-    .select("id, user_id, cat, title, body, blocks, created_at, acted_at")
-    .order("created_at", { ascending: false });
-  if (error || !data) return;
-  mergeRemote(
-    data
-      .filter((row) => typeof row.cat === "string" && row.cat.trim().length > 0)
-      .map((row) => ({
-        ...row,
-        cat: row.cat,
-        blocks: Array.isArray(row.blocks) ? row.blocks.filter(isBlock) : [],
-        pending: false,
-      })),
-  );
-}
-
-export async function flushOutbox() {
-  const box = readJson<Note[]>(OUTBOX_KEY, []);
-  for (const note of box) {
-    await syncNote(note);
-  }
+export function applyRemoteNotes(notes: Note[]) {
+  persist(notes, false);
 }

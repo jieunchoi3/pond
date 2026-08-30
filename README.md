@@ -38,44 +38,23 @@ Open [http://localhost:43217](http://localhost:43217).
 
 ## Supabase
 
-Pond stores notes on this device first. When Supabase keys are set, a signed-in user also syncs to Postgres (RLS: `auth.uid() = user_id`). Magic-link auth lives in the UI; captures never wait on the network.
+No login. This is a single personal pond. Notes, categories, and pins save to this browser and also to one shared Supabase row, so a phone and a laptop see the same water.
 
-Schema: [`supabase/migrations/20260830004342_ponds_and_notes.sql`](./supabase/migrations/20260830004342_ponds_and_notes.sql).
+Anyone with the live URL can read and write that pond. That is the tradeoff for skipping accounts.
 
-### 1. Create a project
+Schema: [`supabase/migrations/20260830185400_personal_pond_state.sql`](./supabase/migrations/20260830185400_personal_pond_state.sql). Run it once in the [SQL editor](https://supabase.com/dashboard/project/myvzlzdsktnudgxqdbxv/sql/new) if the pond does not yet sync across devices.
 
-In Cursor desktop, authenticate the **Supabase** MCP server (OAuth). Then ask the agent to create a project named `pond` and apply the migration.
+The publishable (anon) key is enough. Never put the service-role key in this app.
 
-Or in the [Supabase dashboard](https://supabase.com/dashboard): create a project, run the migration in the SQL editor, and enable Email / magic-link auth.
-
-Copy the project URL and the **publishable** (or legacy anon) key. Never use the service-role key in this app.
-
-### 2. Local keys
+Local override (optional):
 
 ```bash
 cp .env.example .env.local
 ```
 
-Fill in:
-
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-### 3. Vercel keys
-
-On the Pond project in Vercel, set those two variables for Production, Preview, and Development. After a deploy, add the production URL to Supabase Auth:
-
-- Site URL: `https://<your-app>.vercel.app`
-- Redirect URLs: `https://<your-app>.vercel.app/auth/callback`
-
 ## Deploy (Vercel)
 
-This app is meant to live on the **JIEUN** Vercel team as project `pond`.
-
-Git deploys from Cursor Origin need Origin connected once:
-
-1. Open [Vercel Git settings](https://vercel.com/jieun1108/~/settings/git)
-2. Connect **Cursor Origin**
-3. Re-link this repo (or ask the agent to run `create_git_project` again)
-
-Until that link exists, production deploys are file uploads to the `pond` project. The app runs without Supabase (localStorage + seed notes). Magic-link sync turns on after the keys and schema above are in place.
+GitHub repo: [jieunchoi3/pond](https://github.com/jieunchoi3/pond). Pushes to `main` deploy on the JIEUN team.

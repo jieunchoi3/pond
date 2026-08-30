@@ -26,10 +26,15 @@ function read(): string[] {
   }
 }
 
-function persist(next: string[]) {
+function persist(next: string[], sync = true) {
   snapshot = next;
   window.localStorage.setItem(KEY, JSON.stringify(next));
   emit();
+  if (sync) {
+    queueMicrotask(() => {
+      void import("@/lib/notes/sync").then((mod) => mod.schedulePondSync());
+    });
+  }
 }
 
 export function subscribePins(onStoreChange: () => void) {
@@ -67,4 +72,8 @@ export function togglePin(id: string) {
 
 export function dropPin(id: string) {
   persist(getPinsSnapshot().filter((item) => item !== id));
+}
+
+export function applyRemotePins(next: string[]) {
+  persist(next, false);
 }
