@@ -6,6 +6,12 @@ type NoteListProps = {
   notes: Note[];
 };
 
+function formatWhen(value: string) {
+  const time = Date.parse(value);
+  if (Number.isNaN(time)) return "";
+  return new Date(time).toLocaleString();
+}
+
 export function NoteList({ notes }: NoteListProps) {
   if (notes.length === 0) {
     return (
@@ -26,7 +32,7 @@ export function NoteList({ notes }: NoteListProps) {
           <p className="type-caption mt-3">
             {note.cat}
             {" · "}
-            {new Date(note.created_at).toLocaleString()}
+            {formatWhen(note.created_at)}
             {note.pending ? " · syncing" : ""}
           </p>
         </li>

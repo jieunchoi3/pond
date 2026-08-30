@@ -1,8 +1,8 @@
 import { CATS, type Cat, type Note } from "@/lib/notes/types";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-const NOTES_KEY = "pond.notes.v1";
-const OUTBOX_KEY = "pond.outbox.v1";
+const NOTES_KEY = "pond.notes.v2";
+const OUTBOX_KEY = "pond.outbox.v2";
 const EVENT = "pond-notes";
 
 let snapshot: Note[] = [];
@@ -38,9 +38,21 @@ export function subscribeNotes(onStoreChange: () => void) {
   };
 }
 
+function isNote(value: unknown): value is Note {
+  if (!value || typeof value !== "object") return false;
+  const note = value as Partial<Note>;
+  return (
+    typeof note.id === "string" &&
+    isCat(String(note.cat ?? "")) &&
+    typeof note.created_at === "string" &&
+    !Number.isNaN(Date.parse(note.created_at))
+  );
+}
+
 export function getNotesSnapshot(): Note[] {
   if (!hydrated && typeof window !== "undefined") {
-    snapshot = readJson<Note[]>(NOTES_KEY, []);
+    const stored = readJson<unknown>(NOTES_KEY, []);
+    snapshot = Array.isArray(stored) ? stored.filter(isNote) : [];
     hydrated = true;
   }
   return snapshot;
