@@ -111,18 +111,18 @@ export function NoteEditor({
       </header>
 
       <div ref={wrapRef} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="flex flex-col overflow-auto px-6 pt-5" style={{ height: `${split * 100}%` }}>
+        <div className="flex flex-col overflow-auto px-8 pt-5" style={{ height: `${split * 100}%` }}>
           <input
             value={note.title}
             onChange={(event) => onChange({ title: event.target.value })}
             placeholder="Add your original spark"
-            className="type-note-title w-full border-b border-line bg-transparent py-3 text-ink outline-none placeholder:text-ink-soft"
+            className="type-note-title w-full border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft"
           />
           <textarea
             value={note.body}
             onChange={(event) => onChange({ body: event.target.value })}
             placeholder="add your ideas…"
-            className="type-body mt-1 min-h-0 w-full flex-1 resize-none border-b border-line bg-transparent py-3 text-ink outline-none placeholder:text-ink-soft"
+            className="type-body mt-1 min-h-0 w-full flex-1 resize-none border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft"
           />
         </div>
 

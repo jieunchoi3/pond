@@ -84,7 +84,7 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Add your original spark"
-            className="type-body min-h-0 w-full flex-1 resize-none bg-transparent text-ink outline-none placeholder:text-ink-soft"
+            className="type-body min-h-0 w-full flex-1 resize-none bg-transparent px-6 py-3 text-ink outline-none placeholder:text-ink-soft"
           />
 
           <div className="mt-4 flex flex-wrap gap-2">

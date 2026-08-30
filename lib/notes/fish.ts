@@ -143,6 +143,47 @@ export function matchesQuery(title: string, body: string, cat: string, query: st
   );
 }
 
+export function snippetAround(text: string, query: string, max = 72) {
+  const t = text.replace(/\s+/g, " ").trim();
+  const q = query.trim();
+  if (!q) return clipBody(t, max);
+  const at = t.toLowerCase().indexOf(q.toLowerCase());
+  if (at < 0) return clipBody(t, max);
+  const start = Math.max(0, at - 16);
+  const chunk = `${start > 0 ? "…" : ""}${t.slice(start)}`;
+  return clipBody(chunk, max);
+}
+
+export type SearchHit = {
+  note: Note;
+  score: number;
+  inTitle: boolean;
+};
+
+export function searchNotes(notes: Note[], query: string, limit = 8): SearchHit[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const hits: SearchHit[] = [];
+  for (const note of notes) {
+    const title = note.title.toLowerCase();
+    const body = note.body.toLowerCase();
+    const cat = note.cat.toLowerCase();
+    const inTitle = title.includes(q);
+    const inBody = body.includes(q);
+    const inCat = cat.includes(q);
+    if (!inTitle && !inBody && !inCat) continue;
+    let score = 0;
+    if (title === q) score += 120;
+    else if (title.startsWith(q)) score += 90;
+    else if (inTitle) score += 70;
+    if (inBody) score += 24;
+    if (inCat) score += 8;
+    hits.push({ note, score, inTitle });
+  }
+  hits.sort((a, b) => b.score - a.score || b.note.acted_at.localeCompare(a.note.acted_at));
+  return hits.slice(0, limit);
+}
+
 export function catchOfTheDay(notes: Note[], now = Date.now()) {
   return [...notes]
     .filter((note) => daysIdle(note.acted_at, now) >= CATCH_MIN_DAYS)

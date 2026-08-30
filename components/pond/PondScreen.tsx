@@ -115,7 +115,7 @@ export function PondScreen() {
     <div ref={rootRef} className="relative flex h-dvh flex-col overflow-hidden bg-water-1">
       <LilyTab open={showCatch} onToggle={() => setShowCatch((value) => !value)} />
 
-      <div className="mx-auto flex min-h-0 w-full max-w-(--page-max) flex-1 flex-col gap-4 overflow-hidden px-6 py-4">
+      <div className="mx-auto flex min-h-0 w-full max-w-(--page-max) flex-1 flex-col gap-3 overflow-hidden px-6 py-3">
         {isSupabaseConfigured() ? (
           <MagicLinkForm email={email} onSignedOut={() => setEmail(null)} />
         ) : null}
@@ -123,8 +123,10 @@ export function PondScreen() {
         <SearchAndFilters
           query={query}
           tag={tag}
+          notes={notes}
           onQueryChange={setQuery}
           onTagChange={setTag}
+          onPickNote={setEditingId}
         />
 
         {showCatch ? (
