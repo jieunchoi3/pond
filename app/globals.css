@@ -287,9 +287,10 @@
   line-height: 0;
   cursor: pointer;
   transform-origin: center center;
-  will-change: transform;
+  will-change: transform, filter;
   transition: none;
-  transform: translate(-9999px, -9999px);
+  transform: translate3d(-9999px, -9999px, 0);
+  backface-visibility: hidden;
   filter: drop-shadow(var(--shadow-sm));
 }
 
