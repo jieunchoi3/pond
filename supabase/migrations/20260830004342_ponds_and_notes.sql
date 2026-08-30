@@ -1,14 +1,15 @@
 -- ponds + notes
 -- RLS: a user only sees their own rows.
+-- Additive: this project may already have other public tables.
 
-create table public.ponds (
+create table if not exists public.ponds (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   name text not null default 'Pond',
   created_at timestamptz not null default now()
 );
 
-create table public.notes (
+create table if not exists public.notes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   cat text not null,
@@ -19,11 +20,20 @@ create table public.notes (
   acted_at timestamptz not null default now()
 );
 
-create index notes_user_created_at_idx on public.notes (user_id, created_at desc);
-create index ponds_user_id_idx on public.ponds (user_id);
+create index if not exists notes_user_created_at_idx on public.notes (user_id, created_at desc);
+create index if not exists ponds_user_id_idx on public.ponds (user_id);
 
 alter table public.ponds enable row level security;
 alter table public.notes enable row level security;
+
+drop policy if exists "ponds_select_own" on public.ponds;
+drop policy if exists "ponds_insert_own" on public.ponds;
+drop policy if exists "ponds_update_own" on public.ponds;
+drop policy if exists "ponds_delete_own" on public.ponds;
+drop policy if exists "notes_select_own" on public.notes;
+drop policy if exists "notes_insert_own" on public.notes;
+drop policy if exists "notes_update_own" on public.notes;
+drop policy if exists "notes_delete_own" on public.notes;
 
 create policy "ponds_select_own" on public.ponds
   for select to authenticated using (auth.uid() = user_id);
