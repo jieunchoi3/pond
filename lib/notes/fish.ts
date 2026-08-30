@@ -82,9 +82,17 @@ export function speciesOf(key: string) {
   return FISH_BY_KEY[key] ?? FISH_SPECIES[0]!;
 }
 
+const ASSIGN_FIRST = [
+  "fish-pink",
+  "fish-blue",
+  "fish-green",
+  "fish-purple",
+];
+
 export function unusedFishKey(used: string[]) {
-  const next = FISH_SPECIES.find((fish) => !used.includes(fish.key));
-  return (next ?? FISH_SPECIES[used.length % FISH_SPECIES.length]!).key;
+  const order = [...ASSIGN_FIRST, ...FISH_SPECIES.map((fish) => fish.key)];
+  const next = order.find((key) => FISH_BY_KEY[key] && !used.includes(key));
+  return next ?? FISH_SPECIES[used.length % FISH_SPECIES.length]!.key;
 }
 
 export function fishFor(cat: Cat, id: string) {

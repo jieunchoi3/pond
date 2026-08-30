@@ -104,8 +104,16 @@ export function CategorySidebar({
           className={`flex h-full flex-col overflow-hidden ${open ? "" : "opacity-0"}`}
           style={{ width: open ? WIDTH : 0 }}
         >
-          <div className="type-label flex h-14 shrink-0 items-center border-b border-line px-5 text-ink-soft">
-            category
+          <div className="type-label flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line px-4 text-ink-soft">
+            <span>category</span>
+            <button
+              type="button"
+              onClick={startAdd}
+              aria-label="Add category"
+              className="grid size-8 place-items-center rounded-pill text-ink"
+            >
+              <Icon icon="ant-design:plus" width={16} />
+            </button>
           </div>
 
           <div ref={listRef} className="flex min-h-0 flex-1 flex-col overflow-auto">
@@ -185,13 +193,26 @@ export function CategorySidebar({
                   setPickerFor(null);
                 }}
               />
-            ) : null}
+            ) : (
+              <button
+                type="button"
+                onClick={startAdd}
+                className="type-label flex h-14 shrink-0 items-center gap-3 border-b border-line px-4 text-left text-ink-soft"
+              >
+                <span className="grid size-10 shrink-0 place-items-center">
+                  <FishThumb
+                    fishKey={unusedFishKey(categories.map((item) => item.fishKey))}
+                  />
+                </span>
+                add category
+              </button>
+            )}
 
             <button
               type="button"
               onClick={startAdd}
               aria-label="Add category"
-              className="min-h-14 flex-1 border-b border-line"
+              className="min-h-14 flex-1"
             />
           </div>
         </div>
@@ -395,7 +416,7 @@ function DraftRow({
         ref={inputRef}
         value={name}
         onChange={(event) => onName(event.target.value)}
-        placeholder="new category"
+        placeholder="category name"
         aria-label="New category name"
         className="type-label min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-soft"
         onKeyDown={(event) => {
@@ -403,6 +424,9 @@ function DraftRow({
           if (event.key === "Escape") onCancel();
         }}
       />
+      <button type="button" onClick={onSave} className="type-label shrink-0 text-accent">
+        add
+      </button>
       <button type="button" onClick={onCancel} className="type-label px-1 text-ink-soft">
         ×
       </button>
