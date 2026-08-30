@@ -29,22 +29,68 @@ export function layerOf(id: string): DepthLayer {
   return LAYERS[(id.charCodeAt(id.length - 1) + id.length) % 3]!;
 }
 
-export const FISH_BY_CAT: Record<Cat, { src: string; species: string; width: number }[]> = {
+export type FishKind = {
+  key: string;
+  species: string;
+  width: number;
+  left: string;
+  right: string;
+};
+
+export const FISH_BY_CAT: Record<Cat, FishKind[]> = {
   "ai art": [
-    { src: "/fish/koi-white.png", species: "Kohaku koi", width: 168 },
-    { src: "/fish/koi-vermilion.png", species: "Vermilion koi", width: 176 },
-    { src: "/fish/koi-blush.png", species: "Blush koi", width: 160 },
-    { src: "/fish/koi-calico.png", species: "Calico koi", width: 144 },
+    {
+      key: "fish-pink",
+      species: "Pink koi",
+      width: 168,
+      left: "/fish/fish-pink-left.png",
+      right: "/fish/fish-pink-right.png",
+    },
+    {
+      key: "fish-purple",
+      species: "Purple koi",
+      width: 176,
+      left: "/fish/fish-purple-left.png",
+      right: "/fish/fish-purple-right.png",
+    },
   ],
   "vibe coding": [
-    { src: "/fish/tang-blue.png", species: "Blue tang", width: 148 },
-    { src: "/fish/carp-honey.png", species: "Honey carp", width: 128 },
+    {
+      key: "fish-blue",
+      species: "Blue tang",
+      width: 160,
+      left: "/fish/fish-blue-left.png",
+      right: "/fish/fish-blue-right.png",
+    },
+    {
+      key: "fish-green",
+      species: "Green carp",
+      width: 152,
+      left: "/fish/fish-green-left.png",
+      right: "/fish/fish-green-right.png",
+    },
   ],
   music: [
-    { src: "/fish/betta-lilac.png", species: "Lilac betta", width: 156 },
-    { src: "/fish/goldfish-orange.png", species: "Orange goldfish", width: 132 },
+    {
+      key: "goldfish-yellow",
+      species: "Yellow goldfish",
+      width: 148,
+      left: "/fish/goldfish-yellow-left.png",
+      right: "/fish/goldfish-yellow-right.png",
+    },
+    {
+      key: "goldfish-red",
+      species: "Red goldfish",
+      width: 140,
+      left: "/fish/goldfish-red-left.png",
+      right: "/fish/goldfish-red-right.png",
+    },
   ],
 };
+
+export const ALL_FISH_SRCS = Object.values(FISH_BY_CAT).flatMap((list) =>
+  list.flatMap((fish) => [fish.left, fish.right]),
+);
 
 export function fishFor(cat: Cat, id: string) {
   const list = FISH_BY_CAT[cat];

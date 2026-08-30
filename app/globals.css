@@ -224,8 +224,10 @@
   padding: 0;
   line-height: 0;
   cursor: pointer;
-  transform-origin: top left;
+  transform-origin: center center;
   will-change: transform;
+  transition: none;
+  transform: translate(-9999px, -9999px);
   filter: drop-shadow(var(--shadow-sm));
 }
 
@@ -235,6 +237,7 @@
   height: auto;
   pointer-events: none;
   user-select: none;
+  transition: none;
 }
 
 .pond-board {

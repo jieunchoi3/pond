@@ -18,10 +18,11 @@ export function Fish({ cat, id, scale = 1, dim = false, layer }: FishProps) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={fish.src}
+      src={fish.left}
       alt=""
       width={width}
       height={Math.round(width * 0.6)}
+      draggable={false}
       style={{
         width,
         height: "auto",
