@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
+import { CategoryPicker } from "@/components/pond/CategoryPicker";
 import { Fish } from "@/components/pond/Fish";
 import { daysIdle, defaultBlock, hasBoard } from "@/lib/notes/fish";
 import {
@@ -10,7 +11,6 @@ import {
   imageFileFromDrop,
   imageFileToContent,
 } from "@/lib/notes/image";
-import { categoryName, usePondCategories } from "@/lib/notes/categories";
 import { type BlockType, type Note, type NoteBlock } from "@/lib/notes/types";
 
 type NoteEditorProps = {
@@ -40,7 +40,6 @@ export function NoteEditor({
   const [split, setSplit] = useState(hasBoard(note) ? 0.42 : 0.76);
   const wrapRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
-  const categories = usePondCategories();
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -115,27 +114,12 @@ export function NoteEditor({
       <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3.5">
         <div className="flex items-center gap-2">
           <Fish cat={note.cat} id={note.id} scale={0.45} />
-          <label className="sr-only" htmlFor="note-cat">
-            Category
-          </label>
-          <select
-            id="note-cat"
+          <CategoryPicker
             value={note.cat}
-            onChange={(event) => onChange({ cat: event.target.value })}
-            className="type-label bg-transparent tracking-[0.08em] text-ink-soft outline-none"
-          >
-            {categories.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-            {categories.some((item) => item.id === note.cat) ? null : (
-              <option value={note.cat}>{categoryName(note.cat)}</option>
-            )}
-          </select>
-          <span className="type-label tracking-[0.08em] text-ink-soft">
-            · {daysIdle(note.acted_at)}d
-          </span>
+            noteId={note.id}
+            onChange={(cat) => onChange({ cat })}
+          />
+          <span className="type-label text-ink-soft">· {daysIdle(note.acted_at)}d</span>
         </div>
         <div className="flex items-center gap-2">
           <button
