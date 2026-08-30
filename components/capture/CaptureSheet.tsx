@@ -1,9 +1,14 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState, type ClipboardEvent } from "react";
 import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
 import { defaultBlock } from "@/lib/notes/fish";
+import {
+  imageFileFromClipboard,
+  imageFileFromDrop,
+  imageFileToContent,
+} from "@/lib/notes/image";
 import { usePondCategories } from "@/lib/notes/categories";
 import { type BlockType, type Cat, type NoteBlock } from "@/lib/notes/types";
 
@@ -92,6 +97,25 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
       setBlocks((list) => list.filter((item) => item.id !== id));
     }
 
+    async function ingestImage(file: File) {
+      const content = await imageFileToContent(file);
+      setBlocks((list) => {
+        const empty = list.find((item) => item.type === "image" && !item.content.trim());
+        if (empty) {
+          return list.map((item) => (item.id === empty.id ? { ...item, content } : item));
+        }
+        return [...list, { ...defaultBlock("image", list.length), content }];
+      });
+      setExpanded(true);
+    }
+
+    function takeImagePaste(event: ClipboardEvent) {
+      const file = imageFileFromClipboard(event);
+      if (!file) return;
+      event.preventDefault();
+      void ingestImage(file);
+    }
+
     return (
       <div
         ref={rootRef}
@@ -117,6 +141,7 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
               : "h-[min(640px,80dvh)] w-[min(920px,92vw)]"
           }`}
           onClick={(event) => event.stopPropagation()}
+          onPaste={takeImagePaste}
         >
           <div className={`flex min-h-0 flex-col px-8 pt-8 ${expanded ? "flex-none" : "flex-1"}`}>
             <div className="mb-4 flex flex-wrap gap-2">
@@ -180,6 +205,16 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
               className={`min-h-0 flex-1 overflow-auto ${
                 expanded ? "pond-board relative" : "flex flex-wrap content-start gap-3 p-6"
               }`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+              }}
+              onDrop={(event) => {
+                const file = imageFileFromDrop(event);
+                if (!file) return;
+                event.preventDefault();
+                void ingestImage(file);
+              }}
             >
               {blocks.map((block) => (
                 <BoardCard

@@ -1,7 +1,14 @@
 "use client";
 
-import { useRef, type RefObject } from "react";
+import { useRef, useState, type RefObject } from "react";
 import type { NoteBlock } from "@/lib/notes/types";
+import {
+  imageFileFromClipboard,
+  imageFileFromDrop,
+  imageFileToContent,
+  isEmbeddedImage,
+  isShownImage,
+} from "@/lib/notes/image";
 
 type BoardCardProps = {
   block: NoteBlock;
@@ -19,6 +26,8 @@ export function BoardCard({
   onDelete,
 }: BoardCardProps) {
   const drag = useRef<{ dx: number; dy: number } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState("");
 
   function startDrag(event: React.PointerEvent<HTMLDivElement>) {
     if (!floating) return;
@@ -45,6 +54,17 @@ export function BoardCard({
     window.addEventListener("pointerup", up);
   }
 
+  async function applyFile(file: File | null) {
+    if (!file) return;
+    try {
+      setError("");
+      const content = await imageFileToContent(file);
+      onChange({ ...block, content });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not add that image.");
+    }
+  }
+
   return (
     <article
       className="overflow-hidden rounded-card border border-line bg-surface shadow-pond-sm"
@@ -52,6 +72,36 @@ export function BoardCard({
         floating
           ? { position: "absolute", left: block.x, top: block.y, width: block.w }
           : { width: block.type === "colour" ? 110 : 200 }
+      }
+      onPaste={
+        block.type === "image"
+          ? (event) => {
+              const file = imageFileFromClipboard(event);
+              if (!file) return;
+              event.preventDefault();
+              event.stopPropagation();
+              void applyFile(file);
+            }
+          : undefined
+      }
+      onDragOver={
+        block.type === "image"
+          ? (event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "copy";
+            }
+          : undefined
+      }
+      onDrop={
+        block.type === "image"
+          ? (event) => {
+              const file = imageFileFromDrop(event);
+              if (!file) return;
+              event.preventDefault();
+              event.stopPropagation();
+              void applyFile(file);
+            }
+          : undefined
       }
     >
       <div
@@ -82,20 +132,49 @@ export function BoardCard({
       ) : null}
       {block.type === "image" ? (
         <>
-          {/^https?:\/\//.test(block.content) ? (
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              event.target.value = "";
+              void applyFile(file);
+            }}
+          />
+          {isShownImage(block.content) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={block.content} alt="" className="block max-h-40 w-full object-cover" />
           ) : (
-            <div className="grid h-[92px] place-items-center bg-water-2 type-label text-ink">
-              paste an image URL
-            </div>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="grid h-[92px] w-full place-items-center bg-water-2 px-3 type-label text-ink"
+            >
+              paste, drop, or upload
+            </button>
           )}
-          <input
-            value={block.content}
-            onChange={(event) => onChange({ ...block, content: event.target.value })}
-            placeholder="image URL"
-            className="type-label w-full bg-transparent px-2.5 py-1.5 text-ink-soft outline-none"
-          />
+          <div className="flex items-center gap-2 px-2.5 py-1.5">
+            {isEmbeddedImage(block.content) ? (
+              <span className="type-label min-w-0 flex-1 truncate text-ink-soft">from this device</span>
+            ) : (
+              <input
+                value={block.content}
+                onChange={(event) => onChange({ ...block, content: event.target.value })}
+                placeholder="or an image URL"
+                className="type-label min-w-0 flex-1 bg-transparent text-ink-soft outline-none"
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="type-label shrink-0 text-ink"
+            >
+              upload
+            </button>
+          </div>
+          {error ? <p className="type-label px-2.5 pb-2 text-ink-soft">{error}</p> : null}
         </>
       ) : null}
       {block.type === "video" ? (

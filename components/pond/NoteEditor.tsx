@@ -4,7 +4,12 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
 import { Fish } from "@/components/pond/Fish";
-import { daysIdle, hasBoard } from "@/lib/notes/fish";
+import { daysIdle, defaultBlock, hasBoard } from "@/lib/notes/fish";
+import {
+  imageFileFromClipboard,
+  imageFileFromDrop,
+  imageFileToContent,
+} from "@/lib/notes/image";
 import { categoryName, usePondCategories } from "@/lib/notes/categories";
 import { type BlockType, type Note, type NoteBlock } from "@/lib/notes/types";
 
@@ -82,8 +87,31 @@ export function NoteEditor({
     onChange({ blocks: note.blocks.filter((item) => item.id !== id) });
   }
 
+  async function ingestImage(file: File) {
+    const content = await imageFileToContent(file);
+    const empty = note.blocks.find((item) => item.type === "image" && !item.content.trim());
+    if (empty) {
+      onChange({
+        blocks: note.blocks.map((item) => (item.id === empty.id ? { ...item, content } : item)),
+      });
+    } else {
+      onChange({
+        blocks: [...note.blocks, { ...defaultBlock("image", note.blocks.length), content }],
+      });
+    }
+    if (split > 0.6) setSplit(0.42);
+  }
+
   return (
-    <div className="absolute inset-0 z-50 flex flex-col bg-surface">
+    <div
+      className="absolute inset-0 z-50 flex flex-col bg-surface"
+      onPaste={(event) => {
+        const file = imageFileFromClipboard(event);
+        if (!file) return;
+        event.preventDefault();
+        void ingestImage(file);
+      }}
+    >
       <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3.5">
         <div className="flex items-center gap-2">
           <Fish cat={note.cat} id={note.id} scale={0.45} />
@@ -163,6 +191,16 @@ export function NoteEditor({
           className={`relative min-h-0 flex-1 overflow-auto ${
             narrow ? "flex flex-wrap content-start gap-3 p-4" : "pond-board"
           }`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+          }}
+          onDrop={(event) => {
+            const file = imageFileFromDrop(event);
+            if (!file) return;
+            event.preventDefault();
+            void ingestImage(file);
+          }}
         >
           {note.blocks.map((block) => (
             <BoardCard
