@@ -63,11 +63,20 @@
   --spacing-fab: var(--size-fab);
 }
 
+@font-face {
+  font-family: "42dot Sans";
+  src: url("/fonts/42dot-sans.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+1100-11FF, U+3130-318F, U+A960-A97F, U+AC00-D7AF, U+D7B0-D7FF;
+}
+
 :root {
-  --font-display: var(--font-inria), var(--font-42dot), Georgia, serif;
-  --font-hand: var(--font-indie), var(--font-42dot), cursive;
-  --font-ui: var(--font-inter), var(--font-42dot), system-ui, sans-serif;
-  --font-input: var(--font-42dot), system-ui, sans-serif;
+  --font-display: var(--font-inria), var(--font-42dot), "42dot Sans", Georgia, serif;
+  --font-hand: var(--font-indie), var(--font-42dot), "42dot Sans", cursive;
+  --font-ui: var(--font-inter), var(--font-42dot), "42dot Sans", system-ui, sans-serif;
+  --font-input: var(--font-42dot), "42dot Sans", system-ui, sans-serif;
 
   --ink: #1f2a28;
   --ink-soft: #667874;

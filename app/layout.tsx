@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Indie_Flower, Inria_Serif, Inter } from "next/font/google";
-import localFont from "next/font/local";
+import { Asta_Sans, Indie_Flower, Inria_Serif, Inter } from "next/font/google";
 import "./globals.css";
 
 const inria = Inria_Serif({
@@ -24,11 +23,12 @@ const inter = Inter({
   display: "swap",
 });
 
-const fortyTwoDot = localFont({
-  src: "./fonts/42dot-sans.woff2",
+/** Asta Sans is 42dot Sans renamed on Google Fonts. Hangul still comes from /fonts/42dot-sans.woff2. */
+const fortyTwoDot = Asta_Sans({
+  subsets: ["latin"],
+  weight: "400",
   variable: "--font-42dot",
   display: "swap",
-  weight: "400",
 });
 
 export const metadata: Metadata = {
