@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { Fish } from "@/components/pond/Fish";
 import { searchNotes, snippetAround } from "@/lib/notes/fish";
 import { usePondCategories } from "@/lib/notes/categories";
+import { AddCategoryChip } from "@/components/pond/AddCategoryChip";
 import type { Note } from "@/lib/notes/types";
 
 export type FilterTag = "all" | string;
@@ -172,6 +173,7 @@ export function SearchAndFilters({
             </button>
           );
         })}
+        <AddCategoryChip onCreated={onTagChange} />
       </div>
     </section>
   );

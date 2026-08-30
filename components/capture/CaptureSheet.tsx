@@ -10,6 +10,7 @@ import {
   imageFileToContent,
 } from "@/lib/notes/image";
 import { usePondCategories } from "@/lib/notes/categories";
+import { AddCategoryChip } from "@/components/pond/AddCategoryChip";
 import { type BlockType, type Cat, type NoteBlock } from "@/lib/notes/types";
 
 export type CaptureDraft = {
@@ -161,6 +162,7 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
                   </button>
                 );
               })}
+              <AddCategoryChip compact onCreated={setCat} />
             </div>
             <input
               ref={titleRef}
