@@ -155,12 +155,12 @@ import { Icon } from '@iconify/react';
 
 ### Fish assets
 
-The fish PNGs are real image fills in the file (`image 365`, `366`, `370`, `373`, `375`, `376`, `378`, `379`). Export them from Figma at 2x PNG with transparency into `/public/fish/`. Two things to fix on export:
+The fish are real image fills in the file (`image 365`, `366`, `370`, `373`, `375`, `376`, `378`, `379`). Export them from Figma at 2x PNG with transparency, then convert to WebP in `/public/fish/`. Two things to fix on export:
 
 1. **Remove the white fringing** on the cut-outs — visible on the red and pink fish. Re-mask, or the halo will show against the water on every screen.
-2. Name them by species, not `image 373`: `koi-white.png`, `goldfish-orange.png`, `tang-blue.png`, `betta-lilac.png`.
+2. Name them by species, not `image 373`: `koi-white.webp`, `goldfish-orange.webp`, `tang-blue.webp`, `betta-lilac.webp`.
 
-The build uses directional pairs: `{species}-left.png` / `{species}-right.png`.
+The build uses directional pairs: `{species}-left.webp` / `{species}-right.webp`.
 
 ---
 

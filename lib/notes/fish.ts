@@ -43,13 +43,13 @@ function directional(key: string, species: string, width: number): FishKind {
     key,
     species,
     width,
-    left: `/fish/${key}-left.png`,
-    right: `/fish/${key}-right.png`,
+    left: `/fish/${key}-left.webp`,
+    right: `/fish/${key}-right.webp`,
   };
 }
 
 function still(key: string, species: string, width: number): FishKind {
-  const src = `/fish/${key}.png`;
+  const src = `/fish/${key}.webp`;
   return { key, species, width, left: src, right: src };
 }
 

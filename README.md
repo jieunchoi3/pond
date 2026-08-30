@@ -38,4 +38,44 @@ Open [http://localhost:43217](http://localhost:43217).
 
 ## Supabase
 
-Magic-link auth when keys are in `.env.local`. Schema: `supabase/migrations/20260830004342_ponds_and_notes.sql`. Captures write locally first, then upsert. The UI never waits on the network.
+Pond stores notes on this device first. When Supabase keys are set, a signed-in user also syncs to Postgres (RLS: `auth.uid() = user_id`). Magic-link auth lives in the UI; captures never wait on the network.
+
+Schema: [`supabase/migrations/20260830004342_ponds_and_notes.sql`](./supabase/migrations/20260830004342_ponds_and_notes.sql).
+
+### 1. Create a project
+
+In Cursor desktop, authenticate the **Supabase** MCP server (OAuth). Then ask the agent to create a project named `pond` and apply the migration.
+
+Or in the [Supabase dashboard](https://supabase.com/dashboard): create a project, run the migration in the SQL editor, and enable Email / magic-link auth.
+
+Copy the project URL and the **publishable** (or legacy anon) key. Never use the service-role key in this app.
+
+### 2. Local keys
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+### 3. Vercel keys
+
+On the Pond project in Vercel, set those two variables for Production, Preview, and Development. After a deploy, add the production URL to Supabase Auth:
+
+- Site URL: `https://<your-app>.vercel.app`
+- Redirect URLs: `https://<your-app>.vercel.app/auth/callback`
+
+## Deploy (Vercel)
+
+This app is meant to live on the **JIEUN** Vercel team as project `pond`.
+
+Git deploys from Cursor Origin need Origin connected once:
+
+1. Open [Vercel Git settings](https://vercel.com/jieun1108/~/settings/git)
+2. Connect **Cursor Origin**
+3. Re-link this repo (or ask the agent to run `create_git_project` again)
+
+Until that link exists, production deploys are file uploads to the `pond` project. The app runs without Supabase (localStorage + seed notes). Magic-link sync turns on after the keys and schema above are in place.
