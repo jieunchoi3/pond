@@ -366,10 +366,10 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
     const above = box.top - pondBox.top - gap;
     const below = box.bottom - pondBox.top + gap;
     const placeBelow = above - popH < 8;
-    pop.dataset.open = "true";
     pop.style.transform = placeBelow
       ? `translate3d(${cx}px, ${below}px, 0) translate(-50%, 0)`
       : `translate3d(${cx}px, ${above}px, 0) translate(-50%, -100%)`;
+    pop.dataset.open = "true";
   }
 
   function showTitle(note: Note) {
