@@ -183,7 +183,7 @@ The build uses directional pairs: `{species}-left.webp` / `{species}-right.webp`
 ## Product rules (not in the Figma)
 
 - One note type: title + body + board.
-- Size = neglect (days since `acted_at`), cap 90 days / 1.2×.
+- Size = neglect (days since `acted_at`). Fresh notes sit at **0.44×**; at 90 days they reach **1.24×** (about 2.8× a new fish). Cap 90 days. Depth layers still recede, but a 90-day fish stays larger than a new one.
 - Catch of the day: 3 most-neglected notes, 7+ days.
 - Figma file: `https://www.figma.com/design/fXEzUMLn0cfW83m2YUoOoZ/filmmee`
   - Pond + catch: `847:1086`

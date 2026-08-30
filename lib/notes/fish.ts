@@ -5,7 +5,9 @@ export { isCat };
 
 export const MS_DAY = 86_400_000;
 export const MAX_NEGLECT_DAYS = 90;
-export const MAX_NEGLECT_SCALE = 1.2;
+/** Fresh notes. 90-day notes reach FRESH + GROWTH so neglect outruns depth. */
+export const FRESH_FISH_SCALE = 0.44;
+export const NEGLECT_GROWTH = 0.8;
 export const CATCH_MIN_DAYS = 7;
 export const CATCH_LIMIT = 3;
 export const MAX_FISH_ON_SCREEN = 40;
@@ -115,7 +117,7 @@ export function daysIdle(actedAt: string, now = Date.now()) {
 
 export function neglectScale(actedAt: string, now = Date.now()) {
   const days = Math.min(MAX_NEGLECT_DAYS, daysNeglected(actedAt, now));
-  return 1 + (days / MAX_NEGLECT_DAYS) * (MAX_NEGLECT_SCALE - 1);
+  return FRESH_FISH_SCALE + (days / MAX_NEGLECT_DAYS) * NEGLECT_GROWTH;
 }
 
 export function daysLabel(actedAt: string) {
