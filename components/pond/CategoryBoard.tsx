@@ -26,8 +26,10 @@ export function CategoryBoard({
   const pinned = notes.filter((note) => pinnedIds.includes(note.id));
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-auto bg-surface px-8 py-6">
-      <h1 className="type-display mb-8">{category.name}</h1>
+    <div className="relative flex h-full min-h-0 min-w-0 flex-col overflow-auto bg-surface px-8 py-6">
+      <h1 className="type-display mb-8 min-w-0 wrap-break-word [overflow-wrap:anywhere]">
+        {category.name}
+      </h1>
 
       <section className="mb-8">
         <h2 className="type-label mb-4 text-ink-soft">pinned notes</h2>
@@ -36,7 +38,7 @@ export function CategoryBoard({
             Nothing pinned. Hover a spark and pin it to keep it at the surface.
           </p>
         ) : (
-          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
             {pinned.map((note) => (
               <NoteCard
                 key={note.id}
@@ -56,7 +58,7 @@ export function CategoryBoard({
         {notes.length === 0 ? (
           <p className="type-card-body text-ink-soft">No sparks in this pond yet.</p>
         ) : (
-          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
             {notes.map((note) => (
               <NoteCard
                 key={note.id}

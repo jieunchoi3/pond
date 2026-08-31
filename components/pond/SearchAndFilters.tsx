@@ -131,10 +131,10 @@ export function SearchAndFilters({
                     >
                       <Fish cat={hit.note.cat} id={hit.note.id} scale={0.22} />
                       <span className="min-w-0 flex-1">
-                        <span className="type-card-title block truncate">
+                        <span className="type-card-title block wrap-break-word [overflow-wrap:anywhere] line-clamp-2">
                           {hit.note.title || "Untitled spark"}
                         </span>
-                        <span className="type-card-body mt-1 block truncate text-ink-soft">
+                        <span className="type-card-body mt-1 block wrap-break-word [overflow-wrap:anywhere] line-clamp-2 text-ink-soft">
                           {snippet || hit.note.cat}
                         </span>
                       </span>
