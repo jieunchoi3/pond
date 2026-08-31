@@ -27,7 +27,7 @@ Open [http://localhost:43217](http://localhost:43217).
 
 ## What’s on screen
 
-- **Sidebar** — Frame 1319 outline: each category (fish + name) lists its notes underneath. Click **add category** (or the +) to make a new one — leftover fish (pink, blue, green, purple, …) are assigned in order. Click a note to open it. Double-click a name to rename, click the fish to pick another colour. The chevron on the spine collapses the bar.
+- **Sidebar** — Frame 1319 outline: each category (fish + name) lists its notes underneath. Click **add spark** to open the note editor (title, body, canvas) for that pond. Click **add category** (or the +) to make a new one — leftover fish (pink, blue, green, purple, …) are assigned in order. Click a note to open it. Double-click a name to rename, click the fish to pick another colour. The chevron on the spine collapses the bar.
 - **Search + chips** — `search the water...`, then ALL plus every category. Selected chip uses the vermilion accent. Chips stay in sync with the sidebar.
 - **Catch of the day** — white card with the three most-neglected notes (≥ 7 days). Recast marks them acted (throws them back).
 - **Pond** — water gradient, Figma fish, size = neglect (fresh 0.44× → 90 days 1.24×), three depth layers, rAF drift. Filtered-out fish stay dim. One 72px accent FAB in the pond.

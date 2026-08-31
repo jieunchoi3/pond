@@ -28,7 +28,7 @@ type CategorySidebarProps = {
   onSelect: (tag: FilterTag) => void;
   onOpenNote: (id: string) => void;
   onDeleteNote: (id: string) => void;
-  onAddNote: (cat: string, title: string) => void;
+  onAddNote: (cat: string) => void;
 };
 
 export function CategorySidebar({
@@ -49,7 +49,6 @@ export function CategorySidebar({
   const [draft, setDraft] = useState<{ name: string; fishKey: string } | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | "draft" | null>(null);
-  const [sparkDraftCat, setSparkDraftCat] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     return categories.map((item) => ({
@@ -74,19 +73,11 @@ export function CategorySidebar({
 
   function startAdd() {
     setEditingCat(null);
-    setSparkDraftCat(null);
     setDraft({
       name: "",
       fishKey: unusedFishKey(categories.map((item) => item.fishKey)),
     });
     setPickerFor(null);
-  }
-
-  function startSpark(cat: string) {
-    setEditingCat(null);
-    setDraft(null);
-    setPickerFor(null);
-    setSparkDraftCat(cat);
   }
 
   function saveDraft() {
@@ -140,7 +131,6 @@ export function CategorySidebar({
                   onSelect={() => onSelect(item.id)}
                   onEdit={() => {
                     setDraft(null);
-                    setSparkDraftCat(null);
                     setEditingCat(item.id);
                     setPickerFor(null);
                   }}
@@ -195,24 +185,14 @@ export function CategorySidebar({
                       </div>
                     );
                   })}
-                {sparkDraftCat === item.id ? (
-                  <SparkDraftRow
-                    onAdd={(title) => {
-                      onAddNote(item.id, title);
-                      setSparkDraftCat(null);
-                    }}
-                    onCancel={() => setSparkDraftCat(null)}
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => startSpark(item.id)}
-                    className="type-label flex w-full items-center gap-2 py-2 pr-3 pl-14 text-left text-ink-soft"
-                  >
-                    <Icon icon="ant-design:plus" width={12} height={12} />
-                    add spark
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => onAddNote(item.id)}
+                  className="type-label flex min-h-11 w-full items-center gap-2 py-2 pr-3 pl-14 text-left text-ink-soft"
+                >
+                  <Icon icon="ant-design:plus" width={12} height={12} />
+                  add spark
+                </button>
               </section>
             ))}
 
@@ -479,70 +459,5 @@ function DraftRow({
       </button>
       {picking ? <FishPicker current={fishKey} onPick={onFish} /> : null}
     </div>
-  );
-}
-
-function SparkDraftRow({
-  onAdd,
-  onCancel,
-}: {
-  onAdd: (title: string) => void;
-  onCancel: () => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [title, setTitle] = useState("");
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  return (
-    <form
-      className="flex items-center gap-1 bg-surface py-1 pr-3 pl-12"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const next = title.trim();
-        if (!next) {
-          inputRef.current?.focus();
-          return;
-        }
-        onAdd(next);
-      }}
-    >
-      <input
-        ref={inputRef}
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        placeholder="spark title"
-        aria-label="New spark title"
-        enterKeyHint="done"
-        autoComplete="off"
-        autoCorrect="off"
-        className="min-h-11 min-w-0 flex-1 bg-transparent px-1 py-1 text-[16px] text-ink outline-none placeholder:text-ink-soft"
-        style={{ fontFamily: "var(--font-ui)" }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            event.stopPropagation();
-            onCancel();
-          }
-        }}
-      />
-      <button
-        type="submit"
-        className="min-h-11 shrink-0 px-2 text-[13px] font-medium text-accent"
-        style={{ fontFamily: "var(--font-ui)" }}
-      >
-        add
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="min-h-11 shrink-0 px-2 text-[16px] text-ink-soft"
-        aria-label="Cancel"
-      >
-        ×
-      </button>
-    </form>
   );
 }

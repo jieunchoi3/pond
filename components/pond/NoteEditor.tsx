@@ -41,12 +41,14 @@ export function NoteEditor({
   const [body, setBody] = useState(note.body);
   const wrapRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   useEffect(() => {
     setTitle(note.title);
     setBody(note.body);
+    if (!note.title.trim()) titleRef.current?.focus();
   }, [note.id]);
 
   useEffect(() => {
@@ -161,9 +163,11 @@ export function NoteEditor({
       <div ref={wrapRef} className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex flex-col overflow-auto px-8 pt-5" style={{ height: `${split * 100}%` }}>
           <input
+            ref={titleRef}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Add your original spark"
+            autoFocus={!note.title.trim()}
             className="type-note-title w-full border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft"
           />
           <textarea
