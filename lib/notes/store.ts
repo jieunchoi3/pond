@@ -1,6 +1,6 @@
 import { type Cat, type Note, type NoteBlock } from "@/lib/notes/types";
 
-const NOTES_KEY = "pond.notes.v4";
+const NOTES_KEY = "pond.notes.v5";
 const EVENT = "pond-notes";
 
 function requestSync() {
@@ -30,7 +30,11 @@ function readJson<T>(key: string, fallback: T): T {
 function persist(notes: Note[], sync = true) {
   snapshot = notes;
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  try {
+    window.localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  } catch {
+    // Private mode can block storage; the in-memory snapshot still works.
+  }
   emit();
   if (sync) requestSync();
 }
@@ -216,6 +220,12 @@ const SEED: Note[] = [
   },
 ];
 
+const SEED_IDS = new Set(SEED.map((note) => note.id));
+
+export function looksLikeDemoNotes(notes: Note[]): boolean {
+  return notes.length > 0 && notes.every((note) => SEED_IDS.has(note.id) || /^n\d+$/.test(note.id));
+}
+
 export function isNoteRecord(value: unknown): value is Note {
   if (!value || typeof value !== "object") return false;
   const note = value as Partial<Note>;
@@ -232,10 +242,8 @@ export function getNotesSnapshot(): Note[] {
   if (!hydrated && typeof window !== "undefined") {
     const stored = readJson<unknown>(NOTES_KEY, []);
     const valid = Array.isArray(stored) ? stored.filter(isNoteRecord) : [];
-    snapshot = valid.length > 0 ? valid : SEED;
-    if (valid.length === 0) {
-      window.localStorage.setItem(NOTES_KEY, JSON.stringify(SEED));
-    }
+    const legacySeed = looksLikeDemoNotes(valid);
+    snapshot = !legacySeed && valid.length > 0 ? valid : [];
     hydrated = true;
   }
   return snapshot;

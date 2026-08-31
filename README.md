@@ -40,6 +40,8 @@ Open [http://localhost:43217](http://localhost:43217).
 
 No login. This is a single personal pond. Notes, categories, and pins save to this browser and also to one shared Supabase row, so a phone and a laptop see the same water.
 
+The browser talks to `/api/pond` on this same origin. Safari Intelligent Tracking Prevention can block `*.supabase.co` from the page itself, which is why a phone used to stay empty while the laptop still had notes. The API route writes the shared row on the server.
+
 Anyone with the live URL can read and write that pond. That is the tradeoff for skipping accounts.
 
 Schema: [`supabase/migrations/20260830185400_personal_pond_state.sql`](./supabase/migrations/20260830185400_personal_pond_state.sql). Run it once in the [SQL editor](https://supabase.com/dashboard/project/myvzlzdsktnudgxqdbxv/sql/new) if the pond does not yet sync across devices.

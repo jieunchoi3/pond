@@ -43,7 +43,11 @@ function isPondCategory(value: unknown): value is PondCategory {
 function persist(next: PondCategory[], sync = true) {
   snapshot = next;
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, JSON.stringify(next));
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(next));
+  } catch {
+    // Private mode can block storage; the in-memory snapshot still works.
+  }
   emit();
   if (sync) {
     queueMicrotask(() => {
@@ -64,8 +68,12 @@ export function subscribeCategories(onStoreChange: () => void) {
 export function getCategoriesSnapshot(): PondCategory[] {
   if (!hydrated && typeof window !== "undefined") {
     snapshot = read();
-    if (!window.localStorage.getItem(KEY)) {
-      window.localStorage.setItem(KEY, JSON.stringify(snapshot));
+    try {
+      if (!window.localStorage.getItem(KEY)) {
+        window.localStorage.setItem(KEY, JSON.stringify(snapshot));
+      }
+    } catch {
+      // Private mode can block storage.
     }
     hydrated = true;
   }

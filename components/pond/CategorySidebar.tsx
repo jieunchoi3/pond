@@ -49,7 +49,7 @@ export function CategorySidebar({
   const [draft, setDraft] = useState<{ name: string; fishKey: string } | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | "draft" | null>(null);
-  const [sparkDraft, setSparkDraft] = useState<{ cat: string; title: string } | null>(null);
+  const [sparkDraftCat, setSparkDraftCat] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     return categories.map((item) => ({
@@ -74,7 +74,7 @@ export function CategorySidebar({
 
   function startAdd() {
     setEditingCat(null);
-    setSparkDraft(null);
+    setSparkDraftCat(null);
     setDraft({
       name: "",
       fishKey: unusedFishKey(categories.map((item) => item.fishKey)),
@@ -86,13 +86,7 @@ export function CategorySidebar({
     setEditingCat(null);
     setDraft(null);
     setPickerFor(null);
-    setSparkDraft({ cat, title: "" });
-  }
-
-  function saveSparkDraft() {
-    if (!sparkDraft) return;
-    onAddNote(sparkDraft.cat, sparkDraft.title);
-    setSparkDraft(null);
+    setSparkDraftCat(cat);
   }
 
   function saveDraft() {
@@ -146,7 +140,7 @@ export function CategorySidebar({
                   onSelect={() => onSelect(item.id)}
                   onEdit={() => {
                     setDraft(null);
-                    setSparkDraft(null);
+                    setSparkDraftCat(null);
                     setEditingCat(item.id);
                     setPickerFor(null);
                   }}
@@ -201,12 +195,13 @@ export function CategorySidebar({
                       </div>
                     );
                   })}
-                {sparkDraft?.cat === item.id ? (
+                {sparkDraftCat === item.id ? (
                   <SparkDraftRow
-                    title={sparkDraft.title}
-                    onTitle={(title) => setSparkDraft({ ...sparkDraft, title })}
-                    onSave={saveSparkDraft}
-                    onCancel={() => setSparkDraft(null)}
+                    onAdd={(title) => {
+                      onAddNote(item.id, title);
+                      setSparkDraftCat(null);
+                    }}
+                    onCancel={() => setSparkDraftCat(null)}
                   />
                 ) : (
                   <button
@@ -488,36 +483,44 @@ function DraftRow({
 }
 
 function SparkDraftRow({
-  title,
-  onTitle,
-  onSave,
+  onAdd,
   onCancel,
 }: {
-  title: string;
-  onTitle: (title: string) => void;
-  onSave: () => void;
+  onAdd: (title: string) => void;
   onCancel: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState("");
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   return (
-    <div className="flex items-center gap-1 bg-surface py-1 pr-3 pl-14">
+    <form
+      className="flex items-center gap-1 bg-surface py-1 pr-3 pl-12"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const next = title.trim();
+        if (!next) {
+          inputRef.current?.focus();
+          return;
+        }
+        onAdd(next);
+      }}
+    >
       <input
         ref={inputRef}
         value={title}
-        onChange={(event) => onTitle(event.target.value)}
+        onChange={(event) => setTitle(event.target.value)}
         placeholder="spark title"
         aria-label="New spark title"
-        className="type-label min-w-0 flex-1 bg-transparent py-1 text-ink outline-none placeholder:text-ink-soft"
+        enterKeyHint="done"
+        autoComplete="off"
+        autoCorrect="off"
+        className="min-h-11 min-w-0 flex-1 bg-transparent px-1 py-1 text-[16px] text-ink outline-none placeholder:text-ink-soft"
+        style={{ fontFamily: "var(--font-ui)" }}
         onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            onSave();
-          }
           if (event.key === "Escape") {
             event.preventDefault();
             event.stopPropagation();
@@ -525,12 +528,21 @@ function SparkDraftRow({
           }
         }}
       />
-      <button type="button" onClick={onSave} className="type-label shrink-0 text-accent">
+      <button
+        type="submit"
+        className="min-h-11 shrink-0 px-2 text-[13px] font-medium text-accent"
+        style={{ fontFamily: "var(--font-ui)" }}
+      >
         add
       </button>
-      <button type="button" onClick={onCancel} className="type-label px-1 text-ink-soft">
+      <button
+        type="button"
+        onClick={onCancel}
+        className="min-h-11 shrink-0 px-2 text-[16px] text-ink-soft"
+        aria-label="Cancel"
+      >
         ×
       </button>
-    </div>
+    </form>
   );
 }

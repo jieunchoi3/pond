@@ -157,9 +157,7 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
         onOpenNote={openNote}
         onDeleteNote={removeNote}
         onAddNote={(cat, title) => {
-          const note = addNote({ cat, title, userId: null });
-          setTag(cat);
-          openNote(note.id);
+          addNote({ cat, title: title.trim(), userId: null });
         }}
       />
 

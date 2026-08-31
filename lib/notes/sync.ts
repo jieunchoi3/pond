@@ -8,6 +8,7 @@ import {
   applyRemoteNotes,
   getNotesSnapshot,
   isNoteRecord,
+  looksLikeDemoNotes,
 } from "@/lib/notes/store";
 import type { Note, PondCategory } from "@/lib/notes/types";
 
@@ -122,9 +123,32 @@ export function schedulePondSync() {
 }
 
 async function pushPondState() {
+  const payload = snapshotPayload();
+
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/pond", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notes: payload.notes,
+          categories: payload.categories,
+          pins: payload.pins,
+        }),
+      });
+      if (!res.ok) {
+        console.warn("pond sync failed", res.status);
+        return;
+      }
+      lastPushAt = Date.parse(payload.updated_at);
+    } catch (error) {
+      console.warn("pond sync failed", error);
+    }
+    return;
+  }
+
   const supabase = createClient();
   if (!supabase) return;
-  const payload = snapshotPayload();
   const { error } = await supabase.from("pond_state").upsert(payload, { onConflict: "id" });
   if (error) {
     console.warn("pond sync failed", error.message);
@@ -134,6 +158,18 @@ async function pushPondState() {
 }
 
 async function readRemote(): Promise<PondStateRow | null | "error"> {
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/pond", { cache: "no-store" });
+      if (!res.ok) return "error";
+      const data = (await res.json()) as PondStateRow;
+      if (!data || typeof data !== "object") return "error";
+      return data;
+    } catch {
+      return "error";
+    }
+  }
+
   const supabase = createClient();
   if (!supabase) return "error";
   const { data, error } = await supabase
@@ -160,20 +196,31 @@ export async function hydratePond() {
   }
   const remote = await readRemote();
   if (remote === "error") {
+    // Keep SSR/local notes. A failed read must never push and wipe the cloud.
     cloudReady = true;
     return;
   }
+  const local = getNotesSnapshot();
   if (remote) {
     const payload = payloadFromRow(remote);
-    if (payload.ready || payload.notes.length > 0) {
+    if (payload.notes.length > 0) {
       applyPayload(payload);
       lastPushAt = Date.parse(payload.updated_at) || Date.now();
       cloudReady = true;
       return;
     }
+    if (payload.ready) {
+      cloudReady = true;
+      if (local.length > 0 && !looksLikeDemoNotes(local)) {
+        await pushPondState();
+      }
+      return;
+    }
   }
   cloudReady = true;
-  await pushPondState();
+  if (local.length > 0 && !looksLikeDemoNotes(local)) {
+    await pushPondState();
+  }
 }
 
 export async function refreshPondFromCloud() {
@@ -181,7 +228,7 @@ export async function refreshPondFromCloud() {
   const remote = await readRemote();
   if (!remote || remote === "error") return;
   const payload = payloadFromRow(remote);
-  if (!payload.ready && payload.notes.length === 0) return;
+  if (payload.notes.length === 0) return;
   const remoteAt = Date.parse(payload.updated_at) || 0;
   if (remoteAt <= lastPushAt) return;
   applyPayload(payload);
