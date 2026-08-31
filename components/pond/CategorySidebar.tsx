@@ -14,6 +14,28 @@ import { patchNotesCat } from "@/lib/notes/store";
 import type { Note, PondCategory } from "@/lib/notes/types";
 
 const WIDTH = 280;
+const COLLAPSE_KEY = "pond.sidebar.collapsed.v1";
+
+function readCollapsed(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(COLLAPSE_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((id): id is string => typeof id === "string" && id.length > 0));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeCollapsed(ids: Set<string>) {
+  try {
+    window.localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...ids]));
+  } catch {
+    // Private mode can block storage.
+  }
+}
 
 export type FilterTag = "all" | string;
 
@@ -49,6 +71,11 @@ export function CategorySidebar({
   const [draft, setDraft] = useState<{ name: string; fishKey: string } | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [pickerFor, setPickerFor] = useState<string | "draft" | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setCollapsed(readCollapsed());
+  }, []);
 
   const grouped = useMemo(() => {
     return categories.map((item) => ({
@@ -61,6 +88,21 @@ export function CategorySidebar({
     }));
   }, [categories, notes, query]);
 
+  const searching = query.trim().length > 0;
+
+  useEffect(() => {
+    if (!editingId) return;
+    const note = notes.find((item) => item.id === editingId);
+    if (!note) return;
+    setCollapsed((prev) => {
+      if (!prev.has(note.cat)) return prev;
+      const next = new Set(prev);
+      next.delete(note.cat);
+      writeCollapsed(next);
+      return next;
+    });
+  }, [editingId, notes]);
+
   useEffect(() => {
     function onPointer(event: PointerEvent) {
       const target = event.target as Node;
@@ -70,6 +112,16 @@ export function CategorySidebar({
     window.addEventListener("pointerdown", onPointer);
     return () => window.removeEventListener("pointerdown", onPointer);
   }, []);
+
+  function toggleCollapsed(id: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      writeCollapsed(next);
+      return next;
+    });
+  }
 
   function startAdd() {
     setEditingCat(null);
@@ -121,14 +173,19 @@ export function CategorySidebar({
           </div>
 
           <div ref={listRef} className="flex min-h-0 flex-1 flex-col overflow-auto">
-            {grouped.map(({ item, notes: sparks }) => (
+            {grouped.map(({ item, notes: sparks }) => {
+              const expanded = searching || !collapsed.has(item.id);
+              return (
               <section key={item.id} className="border-b border-line">
                 <CategoryRow
                   item={item}
                   selected={selected === item.id}
                   editing={editingCat === item.id}
                   picking={pickerFor === item.id}
+                  expanded={expanded}
+                  sparkCount={sparks.length}
                   onSelect={() => onSelect(item.id)}
+                  onToggleExpand={() => toggleCollapsed(item.id)}
                   onEdit={() => {
                     setDraft(null);
                     setEditingCat(item.id);
@@ -156,35 +213,37 @@ export function CategorySidebar({
                   }}
                   canDelete={categories.length > 1}
                 />
-                {sparks.map((note) => {
-                    const active = note.id === editingId;
-                    return (
-                      <div
-                        key={note.id}
-                        className={`group flex items-center gap-1 pl-12 pr-3 ${
-                          active ? "bg-surface" : ""
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => onOpenNote(note.id)}
-                          className={`type-label min-w-0 flex-1 truncate py-2 text-left ${
-                            active ? "text-ink" : "text-ink-soft"
+                {expanded
+                  ? sparks.map((note) => {
+                      const active = note.id === editingId;
+                      return (
+                        <div
+                          key={note.id}
+                          className={`group flex items-center gap-1 pl-12 pr-3 ${
+                            active ? "bg-surface" : ""
                           }`}
                         >
-                          {note.title || "Untitled spark"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteNote(note.id)}
-                          aria-label={`Delete ${note.title || "Untitled spark"}`}
-                          className="grid size-8 shrink-0 place-items-center text-[#C4473A] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                        >
-                          <Icon icon="bi:trash3" width={14} height={14} />
-                        </button>
-                      </div>
-                    );
-                  })}
+                          <button
+                            type="button"
+                            onClick={() => onOpenNote(note.id)}
+                            className={`type-label min-w-0 flex-1 truncate py-2 text-left ${
+                              active ? "text-ink" : "text-ink-soft"
+                            }`}
+                          >
+                            {note.title || "Untitled spark"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteNote(note.id)}
+                            aria-label={`Delete ${note.title || "Untitled spark"}`}
+                            className="grid size-8 shrink-0 place-items-center text-[#C4473A] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                          >
+                            <Icon icon="bi:trash3" width={14} height={14} />
+                          </button>
+                        </div>
+                      );
+                    })
+                  : null}
                 <button
                   type="button"
                   onClick={() => onAddNote(item.id)}
@@ -194,7 +253,8 @@ export function CategorySidebar({
                   add spark
                 </button>
               </section>
-            ))}
+              );
+            })}
 
             {draft ? (
               <DraftRow
@@ -307,8 +367,11 @@ function CategoryRow({
   selected,
   editing,
   picking,
+  expanded,
+  sparkCount,
   canDelete,
   onSelect,
+  onToggleExpand,
   onEdit,
   onRename,
   onCancelEdit,
@@ -320,8 +383,11 @@ function CategoryRow({
   selected: boolean;
   editing: boolean;
   picking: boolean;
+  expanded: boolean;
+  sparkCount: number;
   canDelete: boolean;
   onSelect: () => void;
+  onToggleExpand: () => void;
   onEdit: () => void;
   onRename: (name: string) => void;
   onCancelEdit: () => void;
@@ -372,6 +438,25 @@ function CategoryRow({
           {item.name}
         </button>
       )}
+
+      {sparkCount > 0 && !expanded ? (
+        <span className="type-label shrink-0 text-ink-soft">{sparkCount}</span>
+      ) : null}
+
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-label={expanded ? `Collapse ${item.name}` : `Expand ${item.name}`}
+        onClick={onToggleExpand}
+        className="grid size-8 shrink-0 place-items-center text-ink-soft"
+      >
+        <Icon
+          icon="bi:chevron-down"
+          width={14}
+          height={14}
+          className={expanded ? "" : "-rotate-90"}
+        />
+      </button>
 
       <button
         type="button"
