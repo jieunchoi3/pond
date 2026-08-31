@@ -26,7 +26,8 @@ import {
   recastNote,
   subscribeNotes,
 } from "@/lib/notes/store";
-import { hydratePond, installCloudBoot, flushPondSync, refreshPondFromCloud } from "@/lib/notes/sync";
+import { hydratePond, installCloudBoot, flushPondSync, restoreLocalPond, refreshPondFromCloud } from "@/lib/notes/sync";
+import { flushLocalPond } from "@/lib/notes/cache";
 import type { PondCloudPayload } from "@/lib/notes/sync";
 import { usePondCategories } from "@/lib/notes/categories";
 
@@ -53,10 +54,17 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
   editingIdRef.current = editingId;
 
   useEffect(() => {
-    void hydratePond();
+    void (async () => {
+      await restoreLocalPond();
+      await hydratePond();
+    })();
+    const onHide = () => {
+      void flushLocalPond();
+      flushPondSync();
+    };
     const onVis = () => {
       if (document.visibilityState === "hidden") {
-        flushPondSync();
+        onHide();
         return;
       }
       if (sheetOpenRef.current || editingIdRef.current) return;
@@ -64,11 +72,11 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
     };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("focus", onVis);
-    window.addEventListener("pagehide", flushPondSync);
+    window.addEventListener("pagehide", onHide);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("focus", onVis);
-      window.removeEventListener("pagehide", flushPondSync);
+      window.removeEventListener("pagehide", onHide);
     };
   }, []);
 
@@ -183,7 +191,10 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
               setEditingId(null);
             }}
             onDelete={() => removeNote(editing.id)}
-            onClose={() => setEditingId(null)}
+            onClose={() => {
+              flushPondSync();
+              setEditingId(null);
+            }}
           />
         ) : browsing ? (
           <CategoryBoard

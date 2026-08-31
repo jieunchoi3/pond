@@ -42,8 +42,17 @@ export function NoteEditor({
   const wrapRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+  const titleLive = useRef(title);
+  const bodyLive = useRef(body);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  titleLive.current = title;
+  bodyLive.current = body;
+
+  function commitText() {
+    if (titleLive.current === note.title && bodyLive.current === note.body) return;
+    onChangeRef.current({ title: titleLive.current, body: bodyLive.current });
+  }
 
   useEffect(() => {
     setTitle(note.title);
@@ -60,8 +69,17 @@ export function NoteEditor({
   }, [title, body, note.id, note.title, note.body]);
 
   useEffect(() => {
+    return () => {
+      commitText();
+    };
+    // Flush whatever was typed when the editor unmounts (Done / switch note).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note.id]);
+
+  useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
+      commitText();
       onClose();
     }
     window.addEventListener("keydown", onKey);
@@ -142,19 +160,32 @@ export function NoteEditor({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={onActed}
+            onClick={() => {
+              commitText();
+              onActed();
+            }}
             className="type-label rounded-pill bg-accent px-4 py-2 text-surface"
           >
             Acted on it
           </button>
           <button
             type="button"
-            onClick={onDelete}
+            onClick={() => {
+              commitText();
+              onDelete();
+            }}
             className="type-label rounded-pill border border-line px-4 py-2 text-ink-soft"
           >
             Release
           </button>
-          <button type="button" onClick={onClose} className="type-label px-2 py-2 text-ink-soft">
+          <button
+            type="button"
+            onClick={() => {
+              commitText();
+              onClose();
+            }}
+            className="type-label px-2 py-2 text-ink-soft"
+          >
             Done
           </button>
         </div>

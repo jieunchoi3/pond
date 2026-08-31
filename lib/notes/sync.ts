@@ -11,6 +11,7 @@ import {
   isNoteRecord,
   looksLikeDemoNotes,
 } from "@/lib/notes/store";
+import { readLocalPond } from "@/lib/notes/cache";
 import type { Note, PondCategory } from "@/lib/notes/types";
 
 const STATE_ID = "default";
@@ -193,10 +194,10 @@ export function installCloudBoot(payload: PondCloudPayload | null) {
 }
 
 export function schedulePondSync() {
-  if (applying || !isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) return;
   if (typeof window === "undefined") return;
   dirty = true;
-  if (!cloudReady) return;
+  if (applying || !cloudReady) return;
   if (pushTimer) window.clearTimeout(pushTimer);
   pushTimer = window.setTimeout(() => {
     pushTimer = null;
@@ -205,10 +206,10 @@ export function schedulePondSync() {
 }
 
 export function flushPondSync() {
-  if (applying || !isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) return;
   if (typeof window === "undefined") return;
   dirty = true;
-  if (!cloudReady) return;
+  if (applying || !cloudReady) return;
   if (pushTimer) {
     window.clearTimeout(pushTimer);
     pushTimer = null;
@@ -304,6 +305,23 @@ async function readRemote(): Promise<PondStateRow | null | "error"> {
   return (data as PondStateRow | null) ?? null;
 }
 
+export async function restoreLocalPond() {
+  if (typeof window === "undefined") return;
+  const disk = await readLocalPond();
+  if (!disk || disk.notes.length === 0) return;
+  const next = reconcile(
+    {
+      notes: disk.notes,
+      categories: disk.categories,
+      pins: disk.pins,
+      ready: true,
+      updated_at: new Date().toISOString(),
+    },
+    getNotesSnapshot(),
+  );
+  applyPayload(next.payload);
+}
+
 export async function loadPondState(): Promise<PondCloudPayload | null> {
   const row = await readRemote();
   if (!row || row === "error") return null;
@@ -317,10 +335,11 @@ export async function hydratePond() {
     cloudReady = true;
     return;
   }
+  cloudReady = true;
+  if (dirty) void pushPondState();
   const remote = await readRemote();
   const local = getNotesSnapshot();
   if (remote === "error") {
-    cloudReady = true;
     if (dirty) await pushPondState();
     return;
   }
@@ -330,12 +349,10 @@ export async function hydratePond() {
       const next = reconcile(payload, local);
       applyPayload(next.payload);
       lastPushAt = Date.parse(payload.updated_at) || Date.now();
-      cloudReady = true;
       if (next.localAhead || dirty) await pushPondState();
       return;
     }
   }
-  cloudReady = true;
   if (dirty || (local.length > 0 && !looksLikeDemoNotes(local))) {
     await pushPondState();
   }

@@ -49,6 +49,9 @@ function persist(next: PondCategory[], sync = true) {
     // Private mode can block storage; the in-memory snapshot still works.
   }
   emit();
+  if (typeof window !== "undefined") {
+    void import("@/lib/notes/cache").then((mod) => mod.rememberLocalPond({ categories: next }));
+  }
   if (sync) {
     queueMicrotask(() => {
       void import("@/lib/notes/sync").then((mod) => mod.schedulePondSync());

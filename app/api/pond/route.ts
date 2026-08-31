@@ -59,13 +59,14 @@ export async function PUT(request: Request) {
     ready: true,
     updated_at: new Date().toISOString(),
   };
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("pond_state")
-    .upsert(payload, { onConflict: "id" })
-    .select("id, notes, categories, pins, ready, updated_at")
-    .maybeSingle();
+    .upsert(payload, { onConflict: "id" });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data ?? payload);
+  return NextResponse.json(
+    { ok: true, updated_at: payload.updated_at },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

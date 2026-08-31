@@ -33,11 +33,19 @@ function persist(notes: Note[], sync = true, immediate = false) {
   snapshot = notes;
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+    const raw = JSON.stringify(notes);
+    if (raw.length < 2_000_000) {
+      window.localStorage.setItem(NOTES_KEY, raw);
+    }
   } catch {
-    // Private mode can block storage; the in-memory snapshot still works.
+    // Quota / private mode: IndexedDB is the durable cache.
   }
   emit();
+  if (typeof window !== "undefined") {
+    void import("@/lib/notes/cache").then((mod) =>
+      mod.rememberLocalPond({ notes }, immediate),
+    );
+  }
   if (sync) requestSync(immediate);
 }
 
@@ -283,8 +291,12 @@ export function addNote(input: {
   return note;
 }
 
-function writeNote(next: Note) {
-  persist(getNotesSnapshot().map((note) => (note.id === next.id ? next : note)));
+function writeNote(next: Note, immediate = false) {
+  persist(
+    getNotesSnapshot().map((note) => (note.id === next.id ? next : note)),
+    true,
+    immediate,
+  );
 }
 
 export function patchNote(id: string, patch: Partial<Pick<Note, "title" | "body" | "cat" | "blocks">>) {
