@@ -7,6 +7,7 @@ import { applyRemotePins, getPinsSnapshot } from "@/lib/notes/pins";
 import {
   applyRemoteNotes,
   getNotesSnapshot,
+  isDemoNoteId,
   isNoteRecord,
   looksLikeDemoNotes,
 } from "@/lib/notes/store";
@@ -34,8 +35,10 @@ type PondStateRow = {
 let cloudReady = false;
 let applying = false;
 let booted = false;
+let dirty = false;
 let pushTimer: number | null = null;
 let lastPushAt = 0;
+let pushing = false;
 
 function isCategory(value: unknown): value is PondCategory {
   if (!value || typeof value !== "object") return false;
@@ -92,6 +95,69 @@ function snapshotPayload() {
   };
 }
 
+function noteTime(note: Note) {
+  return Math.max(Date.parse(note.acted_at) || 0, Date.parse(note.created_at) || 0);
+}
+
+function mergeNotes(remote: Note[], local: Note[]): { notes: Note[]; localAhead: boolean } {
+  const map = new Map<string, Note>();
+  for (const note of remote) map.set(note.id, { ...note, pending: false });
+  let localAhead = false;
+  for (const note of local) {
+    if (isDemoNoteId(note.id) && !map.has(note.id)) continue;
+    const current = map.get(note.id);
+    if (!current) {
+      map.set(note.id, { ...note, pending: false });
+      localAhead = true;
+      continue;
+    }
+    if (note.pending || noteTime(note) > noteTime(current)) {
+      map.set(note.id, { ...note, pending: false });
+      localAhead = true;
+    }
+  }
+  return { notes: [...map.values()], localAhead };
+}
+
+function mergeCategories(
+  remote: PondCategory[],
+  local: PondCategory[],
+): { categories: PondCategory[]; localAhead: boolean } {
+  if (remote.length === 0) return { categories: local, localAhead: local.length > 0 };
+  const map = new Map(remote.map((item) => [item.id, item]));
+  let localAhead = false;
+  for (const item of local) {
+    if (map.has(item.id)) continue;
+    map.set(item.id, item);
+    localAhead = true;
+  }
+  return { categories: [...map.values()], localAhead };
+}
+
+function mergePins(remote: string[], local: string[], noteIds: Set<string>) {
+  return [...new Set([...remote, ...local])].filter((id) => noteIds.has(id));
+}
+
+function reconcile(payload: PondCloudPayload, localNotes: Note[]) {
+  const notes = mergeNotes(payload.notes, localNotes);
+  const categories = mergeCategories(payload.categories, getCategoriesSnapshot());
+  const pins = mergePins(
+    payload.pins,
+    getPinsSnapshot(),
+    new Set(notes.notes.map((note) => note.id)),
+  );
+  return {
+    payload: {
+      notes: notes.notes,
+      categories: categories.categories,
+      pins,
+      ready: true,
+      updated_at: payload.updated_at,
+    } satisfies PondCloudPayload,
+    localAhead: notes.localAhead || categories.localAhead,
+  };
+}
+
 function applyPayload(payload: PondCloudPayload) {
   applying = true;
   try {
@@ -105,16 +171,32 @@ function applyPayload(payload: PondCloudPayload) {
 
 export function installCloudBoot(payload: PondCloudPayload | null) {
   if (booted) return;
+  booted = true;
+  if (typeof window !== "undefined") {
+    const local = getNotesSnapshot();
+    if (local.length > 0) {
+      if (payload && (payload.ready || payload.notes.length > 0)) {
+        const next = reconcile(payload, local);
+        applyPayload(next.payload);
+        lastPushAt = Date.parse(payload.updated_at) || Date.now();
+        if (next.localAhead) dirty = true;
+        return;
+      }
+      dirty = !looksLikeDemoNotes(local);
+      return;
+    }
+  }
   if (!payload) return;
   if (!payload.ready && payload.notes.length === 0) return;
-  booted = true;
   applyPayload(payload);
   lastPushAt = Date.parse(payload.updated_at) || Date.now();
 }
 
 export function schedulePondSync() {
-  if (applying || !cloudReady || !isSupabaseConfigured()) return;
+  if (applying || !isSupabaseConfigured()) return;
   if (typeof window === "undefined") return;
+  dirty = true;
+  if (!cloudReady) return;
   if (pushTimer) window.clearTimeout(pushTimer);
   pushTimer = window.setTimeout(() => {
     pushTimer = null;
@@ -122,11 +204,32 @@ export function schedulePondSync() {
   }, 450);
 }
 
-async function pushPondState() {
-  const payload = snapshotPayload();
+export function flushPondSync() {
+  if (applying || !isSupabaseConfigured()) return;
+  if (typeof window === "undefined") return;
+  dirty = true;
+  if (!cloudReady) return;
+  if (pushTimer) {
+    window.clearTimeout(pushTimer);
+    pushTimer = null;
+  }
+  void pushPondState();
+}
 
-  if (typeof window !== "undefined") {
-    try {
+async function pushPondState() {
+  if (pushing) {
+    dirty = true;
+    return;
+  }
+  pushing = true;
+  dirty = false;
+  const payload = snapshotPayload();
+  const hiding =
+    typeof document !== "undefined" && document.visibilityState !== "visible";
+  let failed = false;
+
+  try {
+    if (typeof window !== "undefined") {
       const res = await fetch("/api/pond", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -135,26 +238,46 @@ async function pushPondState() {
           categories: payload.categories,
           pins: payload.pins,
         }),
+        keepalive: hiding,
       });
       if (!res.ok) {
+        failed = true;
+        dirty = true;
         console.warn("pond sync failed", res.status);
         return;
       }
       lastPushAt = Date.parse(payload.updated_at);
-    } catch (error) {
-      console.warn("pond sync failed", error);
+      return;
     }
-    return;
-  }
 
-  const supabase = createClient();
-  if (!supabase) return;
-  const { error } = await supabase.from("pond_state").upsert(payload, { onConflict: "id" });
-  if (error) {
-    console.warn("pond sync failed", error.message);
-    return;
+    const supabase = createClient();
+    if (!supabase) return;
+    const { error } = await supabase.from("pond_state").upsert(payload, { onConflict: "id" });
+    if (error) {
+      failed = true;
+      dirty = true;
+      console.warn("pond sync failed", error.message);
+      return;
+    }
+    lastPushAt = Date.parse(payload.updated_at);
+  } catch (error) {
+    failed = true;
+    dirty = true;
+    console.warn("pond sync failed", error);
+  } finally {
+    pushing = false;
+    if (failed) {
+      if (typeof window !== "undefined") {
+        if (pushTimer) window.clearTimeout(pushTimer);
+        pushTimer = window.setTimeout(() => {
+          pushTimer = null;
+          void pushPondState();
+        }, 1500);
+      }
+    } else if (dirty && cloudReady) {
+      void pushPondState();
+    }
   }
-  lastPushAt = Date.parse(payload.updated_at);
 }
 
 async function readRemote(): Promise<PondStateRow | null | "error"> {
@@ -195,42 +318,39 @@ export async function hydratePond() {
     return;
   }
   const remote = await readRemote();
+  const local = getNotesSnapshot();
   if (remote === "error") {
-    // Keep SSR/local notes. A failed read must never push and wipe the cloud.
     cloudReady = true;
+    if (dirty) await pushPondState();
     return;
   }
-  const local = getNotesSnapshot();
   if (remote) {
     const payload = payloadFromRow(remote);
-    if (payload.notes.length > 0) {
-      applyPayload(payload);
+    if (payload.notes.length > 0 || payload.ready) {
+      const next = reconcile(payload, local);
+      applyPayload(next.payload);
       lastPushAt = Date.parse(payload.updated_at) || Date.now();
       cloudReady = true;
-      return;
-    }
-    if (payload.ready) {
-      cloudReady = true;
-      if (local.length > 0 && !looksLikeDemoNotes(local)) {
-        await pushPondState();
-      }
+      if (next.localAhead || dirty) await pushPondState();
       return;
     }
   }
   cloudReady = true;
-  if (local.length > 0 && !looksLikeDemoNotes(local)) {
+  if (dirty || (local.length > 0 && !looksLikeDemoNotes(local))) {
     await pushPondState();
   }
 }
 
 export async function refreshPondFromCloud() {
-  if (!cloudReady || applying) return;
+  if (!cloudReady || applying || dirty) return;
   const remote = await readRemote();
   if (!remote || remote === "error") return;
   const payload = payloadFromRow(remote);
   if (payload.notes.length === 0) return;
   const remoteAt = Date.parse(payload.updated_at) || 0;
   if (remoteAt <= lastPushAt) return;
-  applyPayload(payload);
+  const next = reconcile(payload, getNotesSnapshot());
+  applyPayload(next.payload);
   lastPushAt = remoteAt;
+  if (next.localAhead) void pushPondState();
 }

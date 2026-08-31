@@ -3,9 +3,11 @@ import { type Cat, type Note, type NoteBlock } from "@/lib/notes/types";
 const NOTES_KEY = "pond.notes.v5";
 const EVENT = "pond-notes";
 
-function requestSync() {
+function requestSync(immediate = false) {
   queueMicrotask(() => {
-    void import("@/lib/notes/sync").then((mod) => mod.schedulePondSync());
+    void import("@/lib/notes/sync").then((mod) =>
+      immediate ? mod.flushPondSync() : mod.schedulePondSync(),
+    );
   });
 }
 
@@ -27,7 +29,7 @@ function readJson<T>(key: string, fallback: T): T {
   }
 }
 
-function persist(notes: Note[], sync = true) {
+function persist(notes: Note[], sync = true, immediate = false) {
   snapshot = notes;
   if (typeof window === "undefined") return;
   try {
@@ -36,7 +38,7 @@ function persist(notes: Note[], sync = true) {
     // Private mode can block storage; the in-memory snapshot still works.
   }
   emit();
-  if (sync) requestSync();
+  if (sync) requestSync(immediate);
 }
 
 export function subscribeNotes(onStoreChange: () => void) {
@@ -222,8 +224,12 @@ const SEED: Note[] = [
 
 const SEED_IDS = new Set(SEED.map((note) => note.id));
 
+export function isDemoNoteId(id: string): boolean {
+  return SEED_IDS.has(id) || /^n\d+$/.test(id);
+}
+
 export function looksLikeDemoNotes(notes: Note[]): boolean {
-  return notes.length > 0 && notes.every((note) => SEED_IDS.has(note.id) || /^n\d+$/.test(note.id));
+  return notes.length > 0 && notes.every((note) => isDemoNoteId(note.id));
 }
 
 export function isNoteRecord(value: unknown): value is Note {
@@ -273,7 +279,7 @@ export function addNote(input: {
     acted_at: now,
     pending: true,
   };
-  persist([...getNotesSnapshot(), note]);
+  persist([...getNotesSnapshot(), note], true, true);
   return note;
 }
 
@@ -301,11 +307,11 @@ export function patchNotesCat(from: string, to: string) {
   const next = getNotesSnapshot().map((note) =>
     note.cat === from ? { ...note, cat: to, pending: true } : note,
   );
-  persist(next);
+  persist(next, true, true);
 }
 
 export function deleteNote(id: string) {
-  persist(getNotesSnapshot().filter((note) => note.id !== id));
+  persist(getNotesSnapshot().filter((note) => note.id !== id), true, true);
 }
 
 export function applyRemoteNotes(notes: Note[]) {

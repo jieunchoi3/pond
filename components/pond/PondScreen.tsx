@@ -26,7 +26,7 @@ import {
   recastNote,
   subscribeNotes,
 } from "@/lib/notes/store";
-import { hydratePond, installCloudBoot, refreshPondFromCloud } from "@/lib/notes/sync";
+import { hydratePond, installCloudBoot, flushPondSync, refreshPondFromCloud } from "@/lib/notes/sync";
 import type { PondCloudPayload } from "@/lib/notes/sync";
 import { usePondCategories } from "@/lib/notes/categories";
 
@@ -55,15 +55,20 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
   useEffect(() => {
     void hydratePond();
     const onVis = () => {
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState === "hidden") {
+        flushPondSync();
+        return;
+      }
       if (sheetOpenRef.current || editingIdRef.current) return;
       void refreshPondFromCloud();
     };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("focus", onVis);
+    window.addEventListener("pagehide", flushPondSync);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("focus", onVis);
+      window.removeEventListener("pagehide", flushPondSync);
     };
   }, []);
 
