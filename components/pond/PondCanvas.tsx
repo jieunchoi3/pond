@@ -16,6 +16,7 @@ import type { Note } from "@/lib/notes/types";
 type PondCanvasProps = {
   notes: Note[];
   visible: Set<string>;
+  paused?: boolean;
   onOpen: (id: string) => void;
   onCapture: () => void;
 };
@@ -45,7 +46,7 @@ type Ripple = { id: number; x: number; y: number };
 const MAX_DT = 0.048;
 const ASPECT = 0.55;
 
-export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProps) {
+export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }: PondCanvasProps) {
   const pondRef = useRef<HTMLDivElement>(null);
   const categories = usePondCategories();
   const fishRev = categories.map((item) => `${item.id}:${item.fishKey}`).join("|");
@@ -60,6 +61,11 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
   const hoverId = useRef<string | null>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const [hoverTitle, setHoverTitle] = useState<string | null>(null);
+  const pausedRef = useRef(paused);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     visibleRef.current = visible;
@@ -218,6 +224,10 @@ export function PondCanvas({ notes, visible, onOpen, onCapture }: PondCanvasProp
     observer.observe(pond);
 
     const tick = (t: number) => {
+      if (pausedRef.current) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
       const dt = Math.min((t - last) / 1000, MAX_DT);
       last = t;
       const { w, h } = bounds.current;

@@ -31,7 +31,7 @@ Open [http://localhost:43217](http://localhost:43217).
 - **Search + chips** — `search the water...`, then ALL plus every category. Selected chip uses the vermilion accent. Chips stay in sync with the sidebar.
 - **Catch of the day** — white card with the three most-neglected notes (≥ 7 days). Recast marks them acted (throws them back).
 - **Pond** — water gradient, Figma fish, size = neglect (fresh 0.44× → 90 days 1.24×), three depth layers, rAF drift. Filtered-out fish stay dim. One 72px accent FAB in the pond.
-- **Capture** — tap + and a white idea sheet opens over the dimmed pond (title, body, canvas-mode toolbar). The same tap focuses the title. Expand fills the screen. Click the dim pond or press Escape to release the spark into the water.
+- **Capture** — tap + and a white idea sheet opens over the dimmed pond (title, body, canvas-mode toolbar). The same tap focuses the title. **Save** throws the spark in the water. Cancel discards. ⌘/Ctrl+Enter also saves. Expand fills the screen.
 - **Editor** — title, body, canvas-mode toolbar (mic / image / YouTube + expand), dotted board with floating cards. Pictures can be pasted, dropped, or uploaded from this device, or still given as a URL. A YouTube link on a video card plays in place. **Acted on it** resets neglect. **Release** deletes the note.
 
 `pond-prototype.jsx` is animation reference only. Do not import it.

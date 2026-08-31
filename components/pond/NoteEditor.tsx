@@ -37,8 +37,25 @@ export function NoteEditor({
   onClose,
 }: NoteEditorProps) {
   const [split, setSplit] = useState(hasBoard(note) ? 0.42 : 0.76);
+  const [title, setTitle] = useState(note.title);
+  const [body, setBody] = useState(note.body);
   const wrapRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setTitle(note.title);
+    setBody(note.body);
+  }, [note.id]);
+
+  useEffect(() => {
+    if (title === note.title && body === note.body) return;
+    const timer = window.setTimeout(() => {
+      onChangeRef.current({ title, body });
+    }, 220);
+    return () => window.clearTimeout(timer);
+  }, [title, body, note.id, note.title, note.body]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -144,14 +161,14 @@ export function NoteEditor({
       <div ref={wrapRef} className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex flex-col overflow-auto px-8 pt-5" style={{ height: `${split * 100}%` }}>
           <input
-            value={note.title}
-            onChange={(event) => onChange({ title: event.target.value })}
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
             placeholder="Add your original spark"
             className="type-note-title w-full border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft"
           />
           <textarea
-            value={note.body}
-            onChange={(event) => onChange({ body: event.target.value })}
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
             placeholder="add your ideas…"
             className="type-body mt-1 min-h-0 w-full flex-1 resize-none border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft"
           />

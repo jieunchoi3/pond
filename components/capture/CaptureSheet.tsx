@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useRef, useState, type ClipboardEvent } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
 import { defaultBlock } from "@/lib/notes/fish";
@@ -28,10 +28,11 @@ export type CaptureSheetHandle = {
 type CaptureSheetProps = {
   defaultCat: Cat;
   onRelease: (input: CaptureDraft) => void;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
-  function CaptureSheet({ defaultCat, onRelease }, ref) {
+  function CaptureSheet({ defaultCat, onRelease, onOpenChange }, ref) {
     const categories = usePondCategories();
     const rootRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLInputElement>(null);
@@ -47,6 +48,7 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
       if (!root) return;
       root.dataset.open = "true";
       root.removeAttribute("aria-hidden");
+      onOpenChange?.(true);
     }
 
     function hide() {
@@ -58,6 +60,7 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
       setTitle("");
       setBody("");
       setBlocks([]);
+      onOpenChange?.(false);
     }
 
     useImperativeHandle(ref, () => ({
@@ -83,6 +86,22 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
       hide();
       if (!draft.title && !draft.body && draft.blocks.length === 0) return;
       onRelease(draft);
+    }
+
+    function discard() {
+      hide();
+    }
+
+    function onSaveKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        commit();
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        event.preventDefault();
+        commit();
+      }
     }
 
     function add(type: BlockType) {
@@ -170,12 +189,7 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Add your original spark"
               className="type-note-title w-full border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft"
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  commit();
-                }
-              }}
+              onKeyDown={onSaveKey}
             />
             <textarea
               value={body}
@@ -184,12 +198,7 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
               className={`type-body mt-1 w-full resize-none border-b border-line bg-transparent py-3 pl-6 pr-4 text-ink outline-none placeholder:text-ink-soft ${
                 expanded ? "h-28" : "min-h-0 flex-1"
               }`}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  commit();
-                }
-              }}
+              onKeyDown={onSaveKey}
             />
           </div>
 
@@ -198,6 +207,24 @@ export const CaptureSheet = forwardRef<CaptureSheetHandle, CaptureSheetProps>(
               expanded={expanded}
               onAdd={add}
               onExpand={() => setExpanded((value) => !value)}
+              extra={
+                <>
+                  <button
+                    type="button"
+                    onClick={discard}
+                    className="type-label px-3 py-2 text-ink-soft"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={commit}
+                    className="type-label rounded-pill bg-accent px-5 py-2 text-surface"
+                  >
+                    Save
+                  </button>
+                </>
+              }
             />
           </div>
 

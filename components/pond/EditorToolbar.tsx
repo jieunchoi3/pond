@@ -1,12 +1,14 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import type { ReactNode } from "react";
 import type { BlockType } from "@/lib/notes/types";
 
 type EditorToolbarProps = {
   onAdd: (type: BlockType) => void;
   onExpand: () => void;
   expanded?: boolean;
+  extra?: ReactNode;
 };
 
 const ACTIONS: { type: BlockType; icon: string; label: string }[] = [
@@ -15,7 +17,7 @@ const ACTIONS: { type: BlockType; icon: string; label: string }[] = [
   { type: "video", icon: "ant-design:youtube-outlined", label: "Add video" },
 ];
 
-export function EditorToolbar({ onAdd, onExpand, expanded = false }: EditorToolbarProps) {
+export function EditorToolbar({ onAdd, onExpand, expanded = false, extra }: EditorToolbarProps) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">
       <span className="type-label shrink-0 px-2 text-ink">canvas mode</span>
@@ -31,15 +33,18 @@ export function EditorToolbar({ onAdd, onExpand, expanded = false }: EditorToolb
           <Icon icon={action.icon} width={20} height={20} />
         </button>
       ))}
-      <button
-        type="button"
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={onExpand}
-        aria-label={expanded ? "Collapse sheet" : "Expand to full screen"}
-        className="ml-auto grid size-10 shrink-0 place-items-center rounded-pill bg-surface-2 text-ink-soft"
-      >
-        <Icon icon="ant-design:expand-alt-outlined" width={18} height={18} />
-      </button>
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        {extra}
+        <button
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={onExpand}
+          aria-label={expanded ? "Collapse sheet" : "Expand to full screen"}
+          className="grid size-10 shrink-0 place-items-center rounded-pill bg-surface-2 text-ink-soft"
+        >
+          <Icon icon="ant-design:expand-alt-outlined" width={18} height={18} />
+        </button>
+      </div>
     </div>
   );
 }

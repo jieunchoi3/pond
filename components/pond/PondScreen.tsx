@@ -44,13 +44,20 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
   const [tag, setTag] = useState<FilterTag>("all");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const selectedTag =
     tag === "all" || categories.some((item) => item.id === tag) ? tag : "all";
+  const sheetOpenRef = useRef(false);
+  const editingIdRef = useRef<string | null>(null);
+  sheetOpenRef.current = sheetOpen;
+  editingIdRef.current = editingId;
 
   useEffect(() => {
     void hydratePond();
     const onVis = () => {
-      if (document.visibilityState === "visible") void refreshPondFromCloud();
+      if (document.visibilityState !== "visible") return;
+      if (sheetOpenRef.current || editingIdRef.current) return;
+      void refreshPondFromCloud();
     };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("focus", onVis);
@@ -207,7 +214,13 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
             />
 
             <div className="min-h-0 flex-1">
-              <PondCanvas notes={notes} visible={visibleIds} onOpen={openNote} onCapture={openCapture} />
+              <PondCanvas
+                notes={notes}
+                visible={visibleIds}
+                paused={sheetOpen}
+                onOpen={openNote}
+                onCapture={openCapture}
+              />
             </div>
           </>
         )}
@@ -216,6 +229,7 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
       <CaptureSheet
         ref={sheetRef}
         defaultCat={defaultCat}
+        onOpenChange={setSheetOpen}
         onRelease={saveSpark}
       />
     </div>
