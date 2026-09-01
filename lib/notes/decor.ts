@@ -14,6 +14,14 @@ export const DECOR_SPECIES: DecorKind[] = [
   { key: "waterwheel", label: "Waterwheel", src: "/decor/waterwheel.webp", width: 176, height: 126 },
   { key: "lantern", label: "Stone lantern", src: "/decor/lantern.webp", width: 120, height: 195 },
   { key: "reed", label: "Reeds", src: "/decor/reed.webp", width: 110, height: 176 },
+  { key: "iris", label: "Iris", src: "/decor/iris.webp", width: 128, height: 190 },
+  { key: "bridge", label: "Moon bridge", src: "/decor/bridge.webp", width: 188, height: 115 },
+  { key: "turtle", label: "Turtle rock", src: "/decor/turtle.webp", width: 168, height: 133 },
+  { key: "frog", label: "Lily frog", src: "/decor/frog.webp", width: 156, height: 118 },
+  { key: "bamboo", label: "Bamboo", src: "/decor/bamboo.webp", width: 108, height: 190 },
+  { key: "basin", label: "Stone basin", src: "/decor/basin.webp", width: 151, height: 168 },
+  { key: "duck", label: "Mandarin duck", src: "/decor/duck.webp", width: 176, height: 93 },
+  { key: "heron", label: "Egret", src: "/decor/heron.webp", width: 123, height: 196 },
 ];
 
 export const DECOR_BY_KEY: Record<string, DecorKind> = Object.fromEntries(
@@ -34,8 +42,16 @@ export function hashDecor(id: string) {
   return hash;
 }
 
-export function assignDecorKey(id: string) {
-  return DECOR_SPECIES[hashDecor(id) % DECOR_SPECIES.length]!.key;
+export function assignDecorKey(id: string, taken: Iterable<string | undefined> = []) {
+  const used = [...taken].filter(isDecorKey);
+  const usedSet = new Set(used);
+  const free = DECOR_SPECIES.filter((item) => !usedSet.has(item.key));
+  if (free.length > 0) return free[hashDecor(id) % free.length]!.key;
+  const counts: Record<string, number> = Object.fromEntries(DECOR_SPECIES.map((item) => [item.key, 0]));
+  for (const key of used) counts[key] = (counts[key] ?? 0) + 1;
+  const min = Math.min(...Object.values(counts));
+  const least = DECOR_SPECIES.filter((item) => counts[item.key] === min);
+  return least[hashDecor(id) % least.length]!.key;
 }
 
 export function decorFor(note: Pick<Note, "id"> & { decorKey?: string | null }) {

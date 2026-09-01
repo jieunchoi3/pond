@@ -43,7 +43,7 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 function persist(notes: Note[], sync = true, immediate = false) {
-  snapshot = notes.map(normalizeNote);
+  snapshot = withDecorSpread(notes);
   if (typeof window === "undefined") return;
   try {
     const raw = JSON.stringify(snapshot);
@@ -279,12 +279,12 @@ export function isNoteRecord(value: unknown): value is Note {
   );
 }
 
-export function normalizeNote(note: Note): Note {
+export function normalizeNote(note: Note, taken: Iterable<string | undefined> = []): Note {
   const status = noteStatus(note);
   const decorKey = isDecorKey(note.decorKey)
     ? note.decorKey
     : status === "acted"
-      ? assignDecorKey(note.id)
+      ? assignDecorKey(note.id, taken)
       : undefined;
   return {
     ...note,
@@ -297,12 +297,29 @@ export function normalizeNote(note: Note): Note {
   };
 }
 
+function withDecorSpread(notes: Note[]): Note[] {
+  const taken: string[] = [];
+  return notes.map((note) => {
+    const base = normalizeNote(note, taken);
+    if (base.status !== "acted") return base;
+    if (isDecorKey(base.decorKey) && !taken.includes(base.decorKey)) {
+      taken.push(base.decorKey);
+      return base;
+    }
+    const key = assignDecorKey(base.id, taken);
+    taken.push(key);
+    if (base.decorKey === key) return base;
+    return { ...base, decorKey: key, pending: true };
+  });
+}
+
 export function getNotesSnapshot(): Note[] {
   if (!hydrated && typeof window !== "undefined") {
     const stored = readJson<unknown>(NOTES_KEY, []);
-    const valid = Array.isArray(stored) ? stored.filter(isNoteRecord).map(normalizeNote) : [];
-    const legacySeed = looksLikeDemoNotes(valid);
-    snapshot = !legacySeed && valid.length > 0 ? valid : [];
+    const valid = Array.isArray(stored) ? stored.filter(isNoteRecord) : [];
+    const normalized = withDecorSpread(valid);
+    const legacySeed = looksLikeDemoNotes(normalized);
+    snapshot = !legacySeed && normalized.length > 0 ? normalized : [];
     hydrated = true;
   }
   return snapshot;
@@ -354,11 +371,14 @@ export function patchNote(id: string, patch: Partial<Pick<Note, "title" | "body"
 export function markActed(id: string) {
   const current = getNotesSnapshot().find((note) => note.id === id);
   if (!current) return;
+  const taken = getNotesSnapshot()
+    .filter((note) => note.id !== id && noteStatus(note) === "acted")
+    .map((note) => note.decorKey);
   writeNote(
     {
       ...current,
       status: "acted",
-      decorKey: isDecorKey(current.decorKey) ? current.decorKey : assignDecorKey(id),
+      decorKey: isDecorKey(current.decorKey) ? current.decorKey : assignDecorKey(id, taken),
       acted_at: new Date().toISOString(),
       pending: true,
     },
@@ -393,6 +413,6 @@ export function deleteNote(id: string) {
 }
 
 export function applyRemoteNotes(notes: Note[]) {
-  persist(notes.map(normalizeNote), false);
+  persist(notes, false);
   hydrated = true;
 }
