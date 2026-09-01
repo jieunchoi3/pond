@@ -102,6 +102,25 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
     [visibleNotes],
   );
 
+  const visibleDecorIds = useMemo(() => {
+    return new Set(
+      acted
+        .filter((note) => {
+          if (selectedTag !== "all" && selectedTag !== "acted" && note.cat !== selectedTag) {
+            return false;
+          }
+          return matchesQuery(note.title, note.body, note.cat, query);
+        })
+        .map((note) => note.id),
+    );
+  }, [acted, query, selectedTag]);
+
+  const pondVisible = useMemo(() => {
+    const next = new Set(visibleIds);
+    for (const id of visibleDecorIds) next.add(id);
+    return next;
+  }, [visibleIds, visibleDecorIds]);
+
   const editing = notes.find((note) => note.id === editingId) ?? null;
   const [narrow, setNarrow] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -271,7 +290,8 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
             <div className="min-h-0 flex-1">
               <PondCanvas
                 notes={open}
-                visible={visibleIds}
+                decorations={acted}
+                visible={pondVisible}
                 paused={sheetOpen}
                 onOpen={openNote}
                 onCapture={openCapture}

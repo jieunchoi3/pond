@@ -4,6 +4,7 @@ import {
   type Note,
   type NoteBlock,
 } from "@/lib/notes/types";
+import { assignDecorKey, isDecorKey } from "@/lib/notes/decor";
 
 export {
   actedNotes,
@@ -279,12 +280,19 @@ export function isNoteRecord(value: unknown): value is Note {
 }
 
 export function normalizeNote(note: Note): Note {
+  const status = noteStatus(note);
+  const decorKey = isDecorKey(note.decorKey)
+    ? note.decorKey
+    : status === "acted"
+      ? assignDecorKey(note.id)
+      : undefined;
   return {
     ...note,
     title: typeof note.title === "string" ? note.title : "",
     body: typeof note.body === "string" ? note.body : "",
     blocks: Array.isArray(note.blocks) ? note.blocks : [],
-    status: noteStatus(note),
+    status,
+    decorKey,
     pending: Boolean(note.pending),
   };
 }
@@ -350,6 +358,7 @@ export function markActed(id: string) {
     {
       ...current,
       status: "acted",
+      decorKey: isDecorKey(current.decorKey) ? current.decorKey : assignDecorKey(id),
       acted_at: new Date().toISOString(),
       pending: true,
     },
@@ -364,6 +373,7 @@ export function restoreNote(id: string) {
     {
       ...current,
       status: "open",
+      decorKey: undefined,
       acted_at: new Date().toISOString(),
       pending: true,
     },

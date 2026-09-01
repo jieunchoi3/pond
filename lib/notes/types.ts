@@ -43,6 +43,7 @@ export type Note = {
   created_at: string;
   acted_at: string;
   status: NoteStatus;
+  decorKey?: string;
   pending: boolean;
 };
 
@@ -101,6 +102,7 @@ export type Database = {
           created_at: string;
           acted_at: string;
           status?: NoteStatus;
+          decorKey?: string;
         };
         Insert: {
           id?: string;
@@ -112,6 +114,7 @@ export type Database = {
           created_at?: string;
           acted_at?: string;
           status?: NoteStatus;
+          decorKey?: string;
         };
         Update: {
           id?: string;
@@ -123,6 +126,7 @@ export type Database = {
           created_at?: string;
           acted_at?: string;
           status?: NoteStatus;
+          decorKey?: string;
         };
         Relationships: [];
       };

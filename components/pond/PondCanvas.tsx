@@ -10,11 +10,13 @@ import {
   neglectScale,
   sampleFish,
 } from "@/lib/notes/fish";
+import { ALL_DECOR_SRCS, decorFor, hashDecor } from "@/lib/notes/decor";
 import { usePondCategories } from "@/lib/notes/categories";
 import type { Note } from "@/lib/notes/types";
 
 type PondCanvasProps = {
   notes: Note[];
+  decorations?: Note[];
   visible: Set<string>;
   paused?: boolean;
   onOpen: (id: string) => void;
@@ -41,20 +43,44 @@ type Swim = {
   lastFilter: string;
 };
 
+type Sit = {
+  x: number;
+  y: number;
+  phase: number;
+  bob: number;
+  scale: number;
+  width: number;
+  height: number;
+  src: string;
+  placed: boolean;
+  lastOpacity: string;
+};
+
 type Ripple = { id: number; x: number; y: number };
 
 const MAX_DT = 0.048;
 const ASPECT = 0.55;
+const DECOR_SCALE = 0.72;
 
-export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }: PondCanvasProps) {
+export function PondCanvas({
+  notes,
+  decorations = [],
+  visible,
+  paused = false,
+  onOpen,
+  onCapture,
+}: PondCanvasProps) {
   const pondRef = useRef<HTMLDivElement>(null);
   const categories = usePondCategories();
   const fishRev = categories.map((item) => `${item.id}:${item.fishKey}`).join("|");
   const nodes = useRef<Record<string, HTMLButtonElement | null>>({});
   const imgs = useRef<Record<string, HTMLImageElement | null>>({});
   const swim = useRef<Record<string, Swim>>({});
+  const sit = useRef<Record<string, Sit>>({});
+  const decorNodes = useRef<Record<string, HTMLButtonElement | null>>({});
   const shown = useMemo(() => sampleFish(notes), [notes]);
   const shownRef = useRef(shown);
+  const decorRef = useRef(decorations);
   const visibleRef = useRef(visible);
   const bounds = useRef({ w: 0, h: 0 });
   const [ripples, setRipples] = useState<Ripple[]>([]);
@@ -76,7 +102,11 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
   }, [shown]);
 
   useEffect(() => {
-    for (const src of ALL_FISH_SRCS) {
+    decorRef.current = decorations;
+  }, [decorations]);
+
+  useEffect(() => {
+    for (const src of [...ALL_FISH_SRCS, ...ALL_DECOR_SRCS]) {
       const image = new Image();
       image.src = src;
     }
@@ -93,6 +123,10 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
     const ids = new Set(shown.map((note) => note.id));
     for (const id of Object.keys(swim.current)) {
       if (!ids.has(id)) delete swim.current[id];
+    }
+    const decorIds = new Set(decorations.map((note) => note.id));
+    for (const id of Object.keys(sit.current)) {
+      if (!decorIds.has(id)) delete sit.current[id];
     }
 
     shown.forEach((note, index) => {
@@ -136,10 +170,63 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
       };
     });
 
+    decorations.forEach((note) => {
+      const kind = decorFor(note);
+      const existing = sit.current[note.id];
+      if (existing) {
+        existing.src = kind.src;
+        existing.width = kind.width;
+        existing.height = kind.height;
+        existing.scale = DECOR_SCALE;
+        return;
+      }
+      const salt = hashDecor(note.id);
+      sit.current[note.id] = {
+        x: 0,
+        y: 0,
+        phase: (salt * 0.017) % (Math.PI * 2),
+        bob: 3 + (salt % 4),
+        scale: DECOR_SCALE,
+        width: kind.width,
+        height: kind.height,
+        src: kind.src,
+        placed: false,
+        lastOpacity: "",
+      };
+    });
+
     function measure() {
       const box = pondRef.current?.getBoundingClientRect();
       if (!box) return;
       bounds.current = { w: box.width, h: box.height };
+    }
+
+    function seedDecor(m: Sit, id: string, w: number, h: number) {
+      const visW = m.width * m.scale;
+      const visH = m.height * m.scale;
+      const padX = Math.max(28, visW * 0.45);
+      const padY = Math.max(24, visH * 0.4);
+      const spanX = Math.max(1, w - padX * 2);
+      const salt = hashDecor(id);
+      m.x = padX + (salt % spanX);
+      const top = h * 0.55;
+      const spanY = Math.max(1, h - padY - top);
+      m.y = top + ((salt >> 8) % spanY);
+      m.placed = true;
+    }
+
+    function paintDecor(m: Sit, el: HTMLButtonElement, t: number, reduce: boolean) {
+      const bob = reduce ? 0 : Math.sin(t * 0.0004 + m.phase) * m.bob;
+      const left = m.x - m.width / 2;
+      const top = m.y + bob - m.height / 2;
+      el.style.transform = `translate3d(${left}px, ${top}px, 0) scale(${m.scale})`;
+      const opacity = visibleRef.current.has(el.dataset.noteId ?? "") ? "1" : "0.1";
+      if (m.lastOpacity !== opacity) {
+        el.style.opacity = opacity;
+        m.lastOpacity = opacity;
+      }
+      el.style.filter = "drop-shadow(var(--shadow-sm))";
+      el.style.zIndex = hoverId.current === (el.dataset.noteId ?? "") ? "5" : "2";
     }
 
     function seed(m: Swim, index: number, w: number, h: number) {
@@ -202,6 +289,15 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
       }
       paint(m, el, imgs.current[note.id] ?? null, last, reduce);
     });
+    decorations.forEach((note) => {
+      const m = sit.current[note.id];
+      const el = decorNodes.current[note.id];
+      if (!m || !el) return;
+      if (bounds.current.w > 0 && bounds.current.h > 0 && !m.placed) {
+        seedDecor(m, note.id, bounds.current.w, bounds.current.h);
+      }
+      paintDecor(m, el, last, reduce);
+    });
     paintTitle();
 
     const observer = new ResizeObserver(() => {
@@ -218,6 +314,15 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
           const ny = prev.h > 0 ? m.y * (h / prev.h) : m.y;
           m.x = nx;
           m.y = ny;
+        }
+      });
+      decorRef.current.forEach((note) => {
+        const m = sit.current[note.id];
+        if (!m) return;
+        if (!m.placed || prev.w <= 0 || prev.h <= 0) seedDecor(m, note.id, w, h);
+        else {
+          m.x = prev.w > 0 ? m.x * (w / prev.w) : m.x;
+          m.y = prev.h > 0 ? m.y * (h / prev.h) : m.y;
         }
       });
     });
@@ -249,6 +354,15 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
 
         paint(m, el, imgs.current[note.id] ?? null, t, reduce);
       }
+      const decorList = decorRef.current;
+      for (let i = 0; i < decorList.length; i += 1) {
+        const note = decorList[i]!;
+        const m = sit.current[note.id];
+        const el = decorNodes.current[note.id];
+        if (!m || !el || w <= 0 || h <= 0) continue;
+        if (!m.placed) seedDecor(m, note.id, w, h);
+        paintDecor(m, el, t, reduce);
+      }
       paintTitle();
       raf = requestAnimationFrame(tick);
     };
@@ -259,7 +373,7 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
       observer.disconnect();
       motionQuery.removeEventListener("change", onMotion);
     };
-  }, [shown, fishRev]);
+  }, [shown, decorations, fishRev]);
 
   function paintTitle() {
     const pop = titleRef.current;
@@ -270,7 +384,7 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
       pop.dataset.open = "false";
       return;
     }
-    const el = nodes.current[id];
+    const el = nodes.current[id] ?? decorNodes.current[id];
     if (!el) {
       pop.dataset.open = "false";
       return;
@@ -371,6 +485,47 @@ export function PondCanvas({ notes, visible, paused = false, onOpen, onCapture }
                 <span className="absolute top-[-5px] right-1.5 size-1.5 rounded-pill bg-surface" />
               ) : null}
             </span>
+          </button>
+        );
+      })}
+      {decorations.map((note) => {
+        const kind = decorFor(note);
+        const dim = !visible.has(note.id);
+        return (
+          <button
+            key={`decor-${note.id}`}
+            ref={(el) => {
+              decorNodes.current[note.id] = el;
+            }}
+            type="button"
+            data-note-id={note.id}
+            className="pond-fish"
+            style={{
+              width: kind.width,
+              pointerEvents: dim ? "none" : "auto",
+            }}
+            onPointerEnter={() => {
+              if (!dim) showTitle(note);
+            }}
+            onPointerLeave={() => hideTitle(note.id)}
+            onFocus={() => {
+              if (!dim) showTitle(note);
+            }}
+            onBlur={() => hideTitle(note.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (!dim) onOpen(note.id);
+            }}
+            aria-label={`${kind.label}: ${note.title || "Untitled spark"}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={kind.src}
+              alt=""
+              width={kind.width}
+              height={kind.height}
+              draggable={false}
+            />
           </button>
         );
       })}

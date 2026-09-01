@@ -2,6 +2,7 @@
 
 import { Icon } from "@iconify/react";
 import { Fish } from "@/components/pond/Fish";
+import { decorFor } from "@/lib/notes/decor";
 import type { Note } from "@/lib/notes/types";
 
 type NoteCardProps = {
@@ -23,6 +24,7 @@ export function NoteCard({
   onDelete,
   onTogglePin,
 }: NoteCardProps) {
+  const decor = note.status === "acted" ? decorFor(note) : null;
   return (
     <article className="group relative flex min-h-[148px] min-w-0 flex-col overflow-hidden rounded-card bg-surface-2 px-4 py-3">
       <div className="absolute top-2 right-2 z-10 flex gap-0.5">
@@ -51,7 +53,19 @@ export function NoteCard({
       <button type="button" onClick={onOpen} className="flex min-h-0 min-w-0 w-full flex-1 flex-col text-left">
         <div className="mb-2 flex min-w-0 items-start gap-2">
           <span className="mt-0.5 shrink-0">
-            <Fish cat={note.cat} id={note.id} scale={0.22} />
+            {decor ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={decor.src}
+                alt=""
+                width={36}
+                height={Math.round((36 * decor.height) / decor.width)}
+                draggable={false}
+                style={{ width: 36, height: "auto" }}
+              />
+            ) : (
+              <Fish cat={note.cat} id={note.id} scale={0.22} />
+            )}
           </span>
           <h3 className="type-card-title min-w-0 flex-1 wrap-break-word [overflow-wrap:anywhere] line-clamp-2">
             {note.title || "Untitled spark"}
