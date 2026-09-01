@@ -27,12 +27,13 @@ Open [http://localhost:43217](http://localhost:43217).
 
 ## What’s on screen
 
-- **Sidebar** — Frame 1319 outline: each category (fish + name) lists its notes underneath. The chevron beside a name folds that list away. Click **add spark** to open the note editor (title, body, canvas) for that pond. Click **add category** (or the +) to make a new one — leftover fish (pink, blue, green, purple, …) are assigned in order. Click a note to open it. Double-click a name to rename, click the fish to pick another colour. The chevron on the spine collapses the bar.
+- **Sidebar** — Frame 1319 outline: each category (fish + name) lists its notes underneath. The chevron beside a name folds that list away. Click **add spark** to open the note editor (title, body, canvas) for that pond. Click **add category** (or the +) to make a new one — leftover fish (pink, blue, green, purple, …) are assigned in order. Click a note to open it. Double-click a name to rename, click the fish to pick another colour. The chevron on the spine collapses the bar. **Acted** at the bottom of the list is the archive of sparks you already solved.
 - **Search + chips** — `search the water...`, then ALL plus every category. Selected chip uses the vermilion accent. Chips stay in sync with the sidebar.
-- **Catch of the day** — white card with the three most-neglected notes (≥ 7 days). Recast marks them acted (throws them back).
-- **Pond** — water gradient, Figma fish, size = neglect (fresh 0.44× → 90 days 1.24×), three depth layers, rAF drift. Filtered-out fish stay dim. One 72px accent FAB in the pond.
+- **Catch of the day** — white card with the three most-neglected **open** notes (≥ 7 days). Recast shows a different neglected set without archiving them.
+- **Pond** — water gradient, Figma fish, size = neglect (fresh 0.44× → 90 days 1.24×), three depth layers, rAF drift. Filtered-out fish stay dim. One 72px accent FAB in the pond. Acted sparks do not swim here.
 - **Capture** — tap + and a white idea sheet opens over the dimmed pond (title, body, canvas-mode toolbar). The same tap focuses the title. **Save** throws the spark in the water. Cancel discards. ⌘/Ctrl+Enter also saves. Expand fills the screen.
-- **Editor** — title, body, canvas-mode toolbar (mic / image / YouTube + expand), dotted board with floating cards. Pictures can be pasted, dropped, or uploaded from this device, or still given as a URL. A YouTube link on a video card plays in place. **Acted on it** resets neglect. **Release** deletes the note.
+- **Editor** — title, body, canvas-mode toolbar (mic / image / YouTube + expand), dotted board with floating cards. Pictures can be pasted, dropped, or uploaded from this device, or still given as a URL. A YouTube link on a video card plays in place. **Acted on it** marks the idea solved and moves it to **Acted**. **Back in the pond** restores an acted spark. **Release** deletes the note.
+- **Acted** — a board of solved sparks (title, category, date acted). They stay out of the pond, catch of the day, and category lists until you put them back.
 
 `pond-prototype.jsx` is animation reference only. Do not import it.
 

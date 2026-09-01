@@ -11,7 +11,7 @@ import {
 } from "@/lib/notes/categories";
 import { FISH_SPECIES, matchesQuery, speciesOf, unusedFishKey } from "@/lib/notes/fish";
 import { patchNotesCat } from "@/lib/notes/store";
-import type { Note, PondCategory } from "@/lib/notes/types";
+import { actedNotes, isOpenNote, type Note, type PondCategory } from "@/lib/notes/types";
 
 const WIDTH = 280;
 const COLLAPSE_KEY = "pond.sidebar.collapsed.v1";
@@ -37,7 +37,7 @@ function writeCollapsed(ids: Set<string>) {
   }
 }
 
-export type FilterTag = "all" | string;
+export type FilterTag = "all" | "acted" | string;
 
 type CategorySidebarProps = {
   open: boolean;
@@ -82,11 +82,14 @@ export function CategorySidebar({
       item,
       notes: notes.filter(
         (note) =>
+          isOpenNote(note) &&
           note.cat === item.id &&
           matchesQuery(note.title, note.body, note.cat, query),
       ),
     }));
   }, [categories, notes, query]);
+
+  const actedCount = useMemo(() => actedNotes(notes).length, [notes]);
 
   const searching = query.trim().length > 0;
 
@@ -287,6 +290,23 @@ export function CategorySidebar({
                 add category
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => onSelect("acted")}
+              aria-pressed={selected === "acted"}
+              className={`flex h-14 shrink-0 items-center gap-3 border-b border-line px-4 text-left ${
+                selected === "acted" ? "bg-surface" : ""
+              }`}
+            >
+              <span className="grid size-10 shrink-0 place-items-center text-accent">
+                <Icon icon="bi:check2-circle" width={22} height={22} />
+              </span>
+              <span className="type-label min-w-0 flex-1 text-ink">Acted</span>
+              {actedCount > 0 ? (
+                <span className="type-label shrink-0 text-ink-soft">{actedCount}</span>
+              ) : null}
+            </button>
 
             <button
               type="button"

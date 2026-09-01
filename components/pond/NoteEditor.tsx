@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
 import { CategoryPicker } from "@/components/pond/CategoryPicker";
-import { daysIdle, defaultBlock, hasBoard } from "@/lib/notes/fish";
+import { defaultBlock, hasBoard } from "@/lib/notes/fish";
 import {
   imageFileFromClipboard,
   imageFileFromDrop,
@@ -17,6 +17,7 @@ type NoteEditorProps = {
   narrow: boolean;
   onChange: (patch: Partial<Pick<Note, "title" | "body" | "cat" | "blocks">>) => void;
   onActed: () => void;
+  onRestore: () => void;
   onDelete: () => void;
   onClose: () => void;
 };
@@ -33,6 +34,7 @@ export function NoteEditor({
   narrow,
   onChange,
   onActed,
+  onRestore,
   onDelete,
   onClose,
 }: NoteEditorProps) {
@@ -155,19 +157,31 @@ export function NoteEditor({
             noteId={note.id}
             onChange={(cat) => onChange({ cat })}
           />
-          <span className="type-label text-ink-soft">· {daysIdle(note.acted_at)}d</span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              commitText();
-              onActed();
-            }}
-            className="type-label rounded-pill bg-accent px-4 py-2 text-surface"
-          >
-            Acted on it
-          </button>
+          {note.status === "acted" ? (
+            <button
+              type="button"
+              onClick={() => {
+                commitText();
+                onRestore();
+              }}
+              className="type-label rounded-pill bg-accent-soft px-4 py-2 text-ink"
+            >
+              Back in the pond
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                commitText();
+                onActed();
+              }}
+              className="type-label rounded-pill bg-accent px-4 py-2 text-surface"
+            >
+              Acted on it
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {

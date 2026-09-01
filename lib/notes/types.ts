@@ -31,6 +31,8 @@ export type NoteBlock = {
   w: number;
 };
 
+export type NoteStatus = "open" | "acted";
+
 export type Note = {
   id: string;
   user_id: string | null;
@@ -40,8 +42,29 @@ export type Note = {
   blocks: NoteBlock[];
   created_at: string;
   acted_at: string;
+  status: NoteStatus;
   pending: boolean;
 };
+
+export function noteStatus(note: { status?: unknown }): NoteStatus {
+  return note.status === "acted" ? "acted" : "open";
+}
+
+export function isOpenNote(note: { status?: unknown }) {
+  return noteStatus(note) === "open";
+}
+
+export function isActedNote(note: { status?: unknown }) {
+  return noteStatus(note) === "acted";
+}
+
+export function openNotes<T extends { status?: unknown }>(notes: T[]) {
+  return notes.filter(isOpenNote);
+}
+
+export function actedNotes<T extends { status?: unknown }>(notes: T[]) {
+  return notes.filter(isActedNote);
+}
 
 export type Database = {
   public: {
@@ -77,6 +100,7 @@ export type Database = {
           blocks: NoteBlock[];
           created_at: string;
           acted_at: string;
+          status?: NoteStatus;
         };
         Insert: {
           id?: string;
@@ -87,6 +111,7 @@ export type Database = {
           blocks?: NoteBlock[];
           created_at?: string;
           acted_at?: string;
+          status?: NoteStatus;
         };
         Update: {
           id?: string;
@@ -97,6 +122,7 @@ export type Database = {
           blocks?: NoteBlock[];
           created_at?: string;
           acted_at?: string;
+          status?: NoteStatus;
         };
         Relationships: [];
       };

@@ -8,7 +8,7 @@ import { usePondCategories } from "@/lib/notes/categories";
 import { AddCategoryChip } from "@/components/pond/AddCategoryChip";
 import type { Note } from "@/lib/notes/types";
 
-export type FilterTag = "all" | string;
+export type FilterTag = "all" | "acted" | string;
 
 type SearchAndFiltersProps = {
   query: string;

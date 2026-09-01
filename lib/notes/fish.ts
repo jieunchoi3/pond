@@ -1,4 +1,4 @@
-import { isCat, type BlockType, type Cat, type Note } from "@/lib/notes/types";
+import { isCat, isOpenNote, type BlockType, type Cat, type Note } from "@/lib/notes/types";
 import { getCategoriesSnapshot } from "@/lib/notes/categories";
 
 export { isCat };
@@ -190,11 +190,26 @@ export function searchNotes(notes: Note[], query: string, limit = 8): SearchHit[
   return hits.slice(0, limit);
 }
 
-export function catchOfTheDay(notes: Note[], now = Date.now()) {
-  return [...notes]
-    .filter((note) => daysIdle(note.acted_at, now) >= CATCH_MIN_DAYS)
-    .sort((a, b) => daysIdle(b.acted_at, now) - daysIdle(a.acted_at, now))
-    .slice(0, CATCH_LIMIT);
+export function actedOnLabel(actedAt: string) {
+  const stamp = Date.parse(actedAt);
+  if (Number.isNaN(stamp)) return "acted";
+  return `acted ${new Date(stamp).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  })}`;
+}
+
+export function catchOfTheDay(
+  notes: Note[],
+  skipIds: ReadonlySet<string> = new Set(),
+  now = Date.now(),
+) {
+  const eligible = [...notes]
+    .filter((note) => isOpenNote(note) && daysIdle(note.acted_at, now) >= CATCH_MIN_DAYS)
+    .sort((a, b) => daysIdle(b.acted_at, now) - daysIdle(a.acted_at, now));
+  const remaining = eligible.filter((note) => !skipIds.has(note.id));
+  const pool = remaining.length > 0 ? remaining : eligible;
+  return pool.slice(0, CATCH_LIMIT);
 }
 
 export function sampleFish<T>(items: T[], cap = MAX_FISH_ON_SCREEN): T[] {

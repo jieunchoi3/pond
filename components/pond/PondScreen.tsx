@@ -5,6 +5,7 @@ import {
   CaptureSheet,
   type CaptureSheetHandle,
 } from "@/components/capture/CaptureSheet";
+import { ActedBoard } from "@/components/pond/ActedBoard";
 import { CatchOfTheDay } from "@/components/pond/CatchOfTheDay";
 import { CategoryBoard } from "@/components/pond/CategoryBoard";
 import { CategorySidebar } from "@/components/pond/CategorySidebar";
@@ -14,7 +15,7 @@ import {
   SearchAndFilters,
   type FilterTag,
 } from "@/components/pond/SearchAndFilters";
-import { matchesQuery } from "@/lib/notes/fish";
+import { CATCH_MIN_DAYS, daysIdle, matchesQuery } from "@/lib/notes/fish";
 import { dropPin, togglePin, usePinnedIds } from "@/lib/notes/pins";
 import {
   addNote,
@@ -23,13 +24,14 @@ import {
   getServerNotesSnapshot,
   markActed,
   patchNote,
-  recastNote,
+  restoreNote,
   subscribeNotes,
 } from "@/lib/notes/store";
 import { hydratePond, installCloudBoot, flushPondSync, restoreLocalPond, refreshPondFromCloud } from "@/lib/notes/sync";
 import { flushLocalPond } from "@/lib/notes/cache";
 import type { PondCloudPayload } from "@/lib/notes/sync";
 import { usePondCategories } from "@/lib/notes/categories";
+import { actedNotes, openNotes } from "@/lib/notes/types";
 
 export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
   installCloudBoot(initial);
@@ -43,11 +45,14 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
   const sheetRef = useRef<CaptureSheetHandle>(null);
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState<FilterTag>("all");
+  const [catchSkip, setCatchSkip] = useState<string[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const selectedTag =
-    tag === "all" || categories.some((item) => item.id === tag) ? tag : "all";
+    tag === "all" || tag === "acted" || categories.some((item) => item.id === tag)
+      ? tag
+      : "all";
   const sheetOpenRef = useRef(false);
   const editingIdRef = useRef<string | null>(null);
   sheetOpenRef.current = sheetOpen;
@@ -80,12 +85,17 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
     };
   }, []);
 
+  const open = useMemo(() => openNotes(notes), [notes]);
+  const acted = useMemo(() => actedNotes(notes), [notes]);
+
   const visibleNotes = useMemo(() => {
-    return notes.filter((note) => {
-      if (selectedTag !== "all" && note.cat !== selectedTag) return false;
+    return open.filter((note) => {
+      if (selectedTag !== "all" && selectedTag !== "acted" && note.cat !== selectedTag) {
+        return false;
+      }
       return matchesQuery(note.title, note.body, note.cat, query);
     });
-  }, [notes, query, selectedTag]);
+  }, [open, query, selectedTag]);
 
   const visibleIds = useMemo(
     () => new Set(visibleNotes.map((note) => note.id)),
@@ -111,6 +121,18 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
     observer.observe(root);
     return () => observer.disconnect();
   }, []);
+
+  function recastCatch(ids: string[]) {
+    setCatchSkip((prev) => {
+      const next = new Set([...prev, ...ids]);
+      const remaining = visibleNotes.filter(
+        (note) =>
+          daysIdle(note.acted_at) >= CATCH_MIN_DAYS && !next.has(note.id),
+      );
+      if (remaining.length === 0) return [];
+      return [...next];
+    });
+  }
 
   function openCapture() {
     sheetRef.current?.open();
@@ -148,14 +170,18 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
     if (editingId === id) setEditingId(null);
   }
 
-  const browsing = categories.find((item) => item.id === selectedTag) ?? null;
+  const browsingActed = selectedTag === "acted";
+  const browsing = browsingActed
+    ? null
+    : (categories.find((item) => item.id === selectedTag) ?? null);
   const defaultCat = browsing?.id ?? categories[0]?.id ?? "ai art";
+  const boardOpen = Boolean(editing || browsing || browsingActed);
 
   return (
     <div
       ref={rootRef}
       className={`relative flex h-dvh overflow-hidden ${
-        editing || browsing ? "bg-surface-2" : "bg-water-1"
+        boardOpen ? "bg-surface-2" : "bg-water-1"
       }`}
     >
       <CategorySidebar
@@ -170,6 +196,7 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
         onOpenNote={openNote}
         onDeleteNote={removeNote}
         onAddNote={(cat) => {
+          setTag(cat);
           const note = addNote({ cat, title: "", userId: null });
           openNote(note.id);
         }}
@@ -177,7 +204,7 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
 
       <div
         className={`flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden ${
-          editing ? "p-3" : browsing ? "" : "gap-3 px-6 py-3"
+          editing ? "p-3" : browsing || browsingActed ? "" : "gap-3 px-6 py-3"
         }`}
       >
         {editing ? (
@@ -190,6 +217,10 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
               markActed(editing.id);
               setEditingId(null);
             }}
+            onRestore={() => {
+              restoreNote(editing.id);
+              setEditingId(null);
+            }}
             onDelete={() => removeNote(editing.id)}
             onClose={() => {
               flushPondSync();
@@ -199,7 +230,7 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
         ) : browsing ? (
           <CategoryBoard
             category={browsing}
-            notes={notes.filter(
+            notes={open.filter(
               (note) =>
                 note.cat === browsing.id &&
                 matchesQuery(note.title, note.body, note.cat, query),
@@ -210,12 +241,20 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
             onTogglePin={togglePin}
             onCapture={openCapture}
           />
+        ) : browsingActed ? (
+          <ActedBoard
+            notes={acted.filter((note) =>
+              matchesQuery(note.title, note.body, note.cat, query),
+            )}
+            onOpen={openNote}
+            onDelete={removeNote}
+          />
         ) : (
           <>
             <SearchAndFilters
               query={query}
               tag={selectedTag}
-              notes={notes}
+              notes={open}
               onQueryChange={setQuery}
               onTagChange={selectCategory}
               onPickNote={openNote}
@@ -223,14 +262,15 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
 
             <CatchOfTheDay
               notes={visibleNotes}
+              skippedIds={new Set(catchSkip)}
               onOpen={openNote}
-              onRecast={recastNote}
+              onRecast={recastCatch}
               onDelete={removeNote}
             />
 
             <div className="min-h-0 flex-1">
               <PondCanvas
-                notes={notes}
+                notes={open}
                 visible={visibleIds}
                 paused={sheetOpen}
                 onOpen={openNote}

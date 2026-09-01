@@ -6,13 +6,20 @@ import type { Note } from "@/lib/notes/types";
 
 type CatchOfTheDayProps = {
   notes: Note[];
+  skippedIds?: ReadonlySet<string>;
   onOpen: (id: string) => void;
-  onRecast: (id: string) => void;
+  onRecast: (ids: string[]) => void;
   onDelete: (id: string) => void;
 };
 
-export function CatchOfTheDay({ notes, onOpen, onRecast, onDelete }: CatchOfTheDayProps) {
-  const daily = catchOfTheDay(notes);
+export function CatchOfTheDay({
+  notes,
+  skippedIds,
+  onOpen,
+  onRecast,
+  onDelete,
+}: CatchOfTheDayProps) {
+  const daily = catchOfTheDay(notes, skippedIds ?? new Set());
 
   return (
     <section className="w-full overflow-hidden rounded-card bg-surface shadow-pond-sm">
@@ -21,7 +28,7 @@ export function CatchOfTheDay({ notes, onOpen, onRecast, onDelete }: CatchOfTheD
         {daily.length > 0 ? (
           <button
             type="button"
-            onClick={() => daily.forEach((note) => onRecast(note.id))}
+            onClick={() => onRecast(daily.map((note) => note.id))}
             className="type-label h-8 shrink-0 rounded-pill bg-accent-soft px-4 text-ink"
           >
             recast

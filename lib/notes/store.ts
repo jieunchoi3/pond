@@ -1,4 +1,16 @@
-import { type Cat, type Note, type NoteBlock } from "@/lib/notes/types";
+import {
+  noteStatus,
+  type Cat,
+  type Note,
+  type NoteBlock,
+} from "@/lib/notes/types";
+
+export {
+  actedNotes,
+  isActedNote,
+  isOpenNote,
+  openNotes,
+} from "@/lib/notes/types";
 
 const NOTES_KEY = "pond.notes.v5";
 const EVENT = "pond-notes";
@@ -30,10 +42,10 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 function persist(notes: Note[], sync = true, immediate = false) {
-  snapshot = notes;
+  snapshot = notes.map(normalizeNote);
   if (typeof window === "undefined") return;
   try {
-    const raw = JSON.stringify(notes);
+    const raw = JSON.stringify(snapshot);
     if (raw.length < 2_000_000) {
       window.localStorage.setItem(NOTES_KEY, raw);
     }
@@ -43,7 +55,7 @@ function persist(notes: Note[], sync = true, immediate = false) {
   emit();
   if (typeof window !== "undefined") {
     void import("@/lib/notes/cache").then((mod) =>
-      mod.rememberLocalPond({ notes }, immediate),
+      mod.rememberLocalPond({ notes: snapshot }, immediate),
     );
   }
   if (sync) requestSync(immediate);
@@ -72,6 +84,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(0),
     acted_at: daysAgo(0),
+    status: "open",
     pending: false,
   },
   {
@@ -83,6 +96,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(47),
     acted_at: daysAgo(47),
+    status: "open",
     pending: false,
   },
   {
@@ -99,6 +113,7 @@ const SEED: Note[] = [
     ],
     created_at: daysAgo(96),
     acted_at: daysAgo(96),
+    status: "open",
     pending: false,
   },
   {
@@ -110,6 +125,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(2),
     acted_at: daysAgo(2),
+    status: "open",
     pending: false,
   },
   {
@@ -121,6 +137,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(29),
     acted_at: daysAgo(29),
+    status: "open",
     pending: false,
   },
   {
@@ -132,6 +149,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(71),
     acted_at: daysAgo(71),
+    status: "open",
     pending: false,
   },
   {
@@ -143,6 +161,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(38),
     acted_at: daysAgo(38),
+    status: "open",
     pending: false,
   },
   {
@@ -160,6 +179,7 @@ const SEED: Note[] = [
     ],
     created_at: daysAgo(58),
     acted_at: daysAgo(58),
+    status: "open",
     pending: false,
   },
   {
@@ -171,6 +191,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(103),
     acted_at: daysAgo(103),
+    status: "open",
     pending: false,
   },
   {
@@ -182,6 +203,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(6),
     acted_at: daysAgo(6),
+    status: "open",
     pending: false,
   },
   {
@@ -193,6 +215,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(132),
     acted_at: daysAgo(132),
+    status: "open",
     pending: false,
   },
   {
@@ -204,6 +227,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(11),
     acted_at: daysAgo(11),
+    status: "open",
     pending: false,
   },
   {
@@ -215,6 +239,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(84),
     acted_at: daysAgo(84),
+    status: "open",
     pending: false,
   },
   {
@@ -226,6 +251,7 @@ const SEED: Note[] = [
     blocks: [],
     created_at: daysAgo(21),
     acted_at: daysAgo(21),
+    status: "open",
     pending: false,
   },
 ];
@@ -252,10 +278,21 @@ export function isNoteRecord(value: unknown): value is Note {
   );
 }
 
+export function normalizeNote(note: Note): Note {
+  return {
+    ...note,
+    title: typeof note.title === "string" ? note.title : "",
+    body: typeof note.body === "string" ? note.body : "",
+    blocks: Array.isArray(note.blocks) ? note.blocks : [],
+    status: noteStatus(note),
+    pending: Boolean(note.pending),
+  };
+}
+
 export function getNotesSnapshot(): Note[] {
   if (!hydrated && typeof window !== "undefined") {
     const stored = readJson<unknown>(NOTES_KEY, []);
-    const valid = Array.isArray(stored) ? stored.filter(isNoteRecord) : [];
+    const valid = Array.isArray(stored) ? stored.filter(isNoteRecord).map(normalizeNote) : [];
     const legacySeed = looksLikeDemoNotes(valid);
     snapshot = !legacySeed && valid.length > 0 ? valid : [];
     hydrated = true;
@@ -285,6 +322,7 @@ export function addNote(input: {
     blocks: input.blocks ?? [],
     created_at: now,
     acted_at: now,
+    status: "open",
     pending: true,
   };
   persist([...getNotesSnapshot(), note], true, true);
@@ -308,11 +346,29 @@ export function patchNote(id: string, patch: Partial<Pick<Note, "title" | "body"
 export function markActed(id: string) {
   const current = getNotesSnapshot().find((note) => note.id === id);
   if (!current) return;
-  writeNote({ ...current, acted_at: new Date().toISOString(), pending: true });
+  writeNote(
+    {
+      ...current,
+      status: "acted",
+      acted_at: new Date().toISOString(),
+      pending: true,
+    },
+    true,
+  );
 }
 
-export function recastNote(id: string) {
-  markActed(id);
+export function restoreNote(id: string) {
+  const current = getNotesSnapshot().find((note) => note.id === id);
+  if (!current) return;
+  writeNote(
+    {
+      ...current,
+      status: "open",
+      acted_at: new Date().toISOString(),
+      pending: true,
+    },
+    true,
+  );
 }
 
 export function patchNotesCat(from: string, to: string) {
@@ -327,6 +383,6 @@ export function deleteNote(id: string) {
 }
 
 export function applyRemoteNotes(notes: Note[]) {
-  persist(notes, false);
+  persist(notes.map(normalizeNote), false);
   hydrated = true;
 }

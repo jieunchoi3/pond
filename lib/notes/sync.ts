@@ -10,6 +10,7 @@ import {
   isDemoNoteId,
   isNoteRecord,
   looksLikeDemoNotes,
+  normalizeNote,
 } from "@/lib/notes/store";
 import { readLocalPond } from "@/lib/notes/cache";
 import type { Note, PondCategory } from "@/lib/notes/types";
@@ -56,13 +57,15 @@ function isCategory(value: unknown): value is PondCategory {
 
 function parseNotes(value: unknown): Note[] {
   if (!Array.isArray(value)) return [];
-  return value.filter(isNoteRecord).map((note) => ({
-    ...note,
-    title: note.title ?? "",
-    body: note.body ?? "",
-    blocks: Array.isArray(note.blocks) ? note.blocks : [],
-    pending: false,
-  }));
+  return value.filter(isNoteRecord).map((note) =>
+    normalizeNote({
+      ...note,
+      title: note.title ?? "",
+      body: note.body ?? "",
+      blocks: Array.isArray(note.blocks) ? note.blocks : [],
+      pending: false,
+    }),
+  );
 }
 
 function parseCategories(value: unknown): PondCategory[] {
