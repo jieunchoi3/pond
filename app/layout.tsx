@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
-import { Asta_Sans, Indie_Flower, Inria_Serif, Inter } from "next/font/google";
+import { Asta_Sans, Inria_Serif, Inter } from "next/font/google";
 import "./globals.css";
 
 const inria = Inria_Serif({
   subsets: ["latin"],
   weight: ["300", "400"],
   variable: "--font-inria",
-  display: "swap",
-});
-
-const indie = Indie_Flower({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-indie",
   display: "swap",
 });
 
@@ -40,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko"
-      className={`${inria.variable} ${indie.variable} ${inter.variable} ${fortyTwoDot.variable} h-full antialiased`}
+      className={`${inria.variable} ${inter.variable} ${fortyTwoDot.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-water-1 font-sans text-ink">{children}</body>
     </html>
