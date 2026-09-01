@@ -163,6 +163,23 @@ export function CategorySidebar({
             </button>
           </div>
 
+          <button
+            type="button"
+            onClick={() => onSelect("acted")}
+            aria-pressed={selected === "acted"}
+            className={`flex h-14 shrink-0 items-center gap-3 border-b border-line px-4 text-left ${
+              selected === "acted" ? "bg-surface" : ""
+            }`}
+          >
+            <span className="grid size-10 shrink-0 place-items-center text-accent">
+              <Icon icon="bi:check2-circle" width={22} height={22} />
+            </span>
+            <span className="type-label min-w-0 flex-1 text-ink">Acted</span>
+            {actedCount > 0 ? (
+              <span className="type-label shrink-0 text-ink-soft">{actedCount}</span>
+            ) : null}
+          </button>
+
           <div className="flex min-h-0 flex-1 flex-col overflow-auto">
             {grouped.map(({ item, notes: sparks }) => {
               const expanded = searching || !collapsed.has(item.id);
@@ -264,23 +281,6 @@ export function CategorySidebar({
                 add category
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={() => onSelect("acted")}
-              aria-pressed={selected === "acted"}
-              className={`flex h-14 shrink-0 items-center gap-3 border-b border-line px-4 text-left ${
-                selected === "acted" ? "bg-surface" : ""
-              }`}
-            >
-              <span className="grid size-10 shrink-0 place-items-center text-accent">
-                <Icon icon="bi:check2-circle" width={22} height={22} />
-              </span>
-              <span className="type-label min-w-0 flex-1 text-ink">Acted</span>
-              {actedCount > 0 ? (
-                <span className="type-label shrink-0 text-ink-soft">{actedCount}</span>
-              ) : null}
-            </button>
 
             <button
               type="button"
