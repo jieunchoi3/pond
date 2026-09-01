@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { addCategory, usePondCategories } from "@/lib/notes/categories";
-import { unusedFishKey } from "@/lib/notes/fish";
+import { randomUnusedFishKey } from "@/lib/notes/fish";
 
 type AddCategoryChipProps = {
   onCreated: (id: string) => void;
@@ -24,7 +24,7 @@ export function AddCategoryChip({ onCreated, compact = false }: AddCategoryChipP
   function save() {
     const created = addCategory(
       name,
-      unusedFishKey(categories.map((item) => item.fishKey)),
+      randomUnusedFishKey(categories.map((item) => item.fishKey)),
     );
     if (!created) return;
     setName("");

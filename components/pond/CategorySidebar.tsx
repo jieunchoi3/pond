@@ -9,7 +9,8 @@ import {
   setCategoryFish,
   usePondCategories,
 } from "@/lib/notes/categories";
-import { FISH_SPECIES, matchesQuery, speciesOf, unusedFishKey } from "@/lib/notes/fish";
+import { matchesQuery, unusedFishKey, randomUnusedFishKey } from "@/lib/notes/fish";
+import { FishInventory, FishThumb } from "@/components/pond/FishInventory";
 import { patchNotesCat } from "@/lib/notes/store";
 import { actedNotes, isOpenNote, type Note, type PondCategory } from "@/lib/notes/types";
 
@@ -67,10 +68,8 @@ export function CategorySidebar({
   onAddNote,
 }: CategorySidebarProps) {
   const categories = usePondCategories();
-  const listRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<{ name: string; fishKey: string } | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
-  const [pickerFor, setPickerFor] = useState<string | "draft" | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -106,16 +105,6 @@ export function CategorySidebar({
     });
   }, [editingId, notes]);
 
-  useEffect(() => {
-    function onPointer(event: PointerEvent) {
-      const target = event.target as Node;
-      if (listRef.current?.contains(target)) return;
-      setPickerFor(null);
-    }
-    window.addEventListener("pointerdown", onPointer);
-    return () => window.removeEventListener("pointerdown", onPointer);
-  }, []);
-
   function toggleCollapsed(id: string) {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -130,9 +119,8 @@ export function CategorySidebar({
     setEditingCat(null);
     setDraft({
       name: "",
-      fishKey: unusedFishKey(categories.map((item) => item.fishKey)),
+      fishKey: randomUnusedFishKey(categories.map((item) => item.fishKey)),
     });
-    setPickerFor(null);
   }
 
   function saveDraft() {
@@ -175,7 +163,7 @@ export function CategorySidebar({
             </button>
           </div>
 
-          <div ref={listRef} className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <div className="flex min-h-0 flex-1 flex-col overflow-auto">
             {grouped.map(({ item, notes: sparks }) => {
               const expanded = searching || !collapsed.has(item.id);
               return (
@@ -184,7 +172,6 @@ export function CategorySidebar({
                   item={item}
                   selected={selected === item.id}
                   editing={editingCat === item.id}
-                  picking={pickerFor === item.id}
                   expanded={expanded}
                   sparkCount={sparks.length}
                   onSelect={() => onSelect(item.id)}
@@ -192,7 +179,6 @@ export function CategorySidebar({
                   onEdit={() => {
                     setDraft(null);
                     setEditingCat(item.id);
-                    setPickerFor(null);
                   }}
                   onRename={(name) => {
                     const trimmed = name.trim();
@@ -203,11 +189,7 @@ export function CategorySidebar({
                     if (renameCategory(item.id, trimmed)) setEditingCat(null);
                   }}
                   onCancelEdit={() => setEditingCat(null)}
-                  onPickFish={() => setPickerFor(pickerFor === item.id ? null : item.id)}
-                  onFish={(key) => {
-                    setCategoryFish(item.id, key);
-                    setPickerFor(null);
-                  }}
+                  onFish={(key) => setCategoryFish(item.id, key)}
                   onDelete={() => {
                     const fallback = deleteCategory(item.id);
                     if (!fallback) return;
@@ -263,18 +245,10 @@ export function CategorySidebar({
               <DraftRow
                 name={draft.name}
                 fishKey={draft.fishKey}
-                picking={pickerFor === "draft"}
                 onName={(name) => setDraft({ ...draft, name })}
-                onPickFish={() => setPickerFor(pickerFor === "draft" ? null : "draft")}
-                onFish={(key) => {
-                  setDraft({ ...draft, fishKey: key });
-                  setPickerFor(null);
-                }}
+                onFish={(key) => setDraft({ ...draft, fishKey: key })}
                 onSave={saveDraft}
-                onCancel={() => {
-                  setDraft(null);
-                  setPickerFor(null);
-                }}
+                onCancel={() => setDraft(null)}
               />
             ) : (
               <button
@@ -336,57 +310,10 @@ export function CategorySidebar({
   );
 }
 
-function FishThumb({ fishKey, size = 36 }: { fishKey: string; size?: number }) {
-  const fish = speciesOf(fishKey);
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={fish.left}
-      alt=""
-      width={size}
-      height={Math.round(size * 0.62)}
-      draggable={false}
-      className="pointer-events-none"
-      style={{ width: size, height: "auto" }}
-    />
-  );
-}
-
-function FishPicker({
-  current,
-  onPick,
-}: {
-  current: string;
-  onPick: (key: string) => void;
-}) {
-  return (
-    <div className="absolute top-[calc(100%-8px)] left-3 z-50 grid w-[220px] grid-cols-4 gap-2 rounded-card border border-line bg-surface p-3 shadow-pond-lg">
-      {FISH_SPECIES.map((fish) => (
-        <button
-          key={fish.key}
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onPick(fish.key);
-          }}
-          aria-label={fish.species}
-          aria-pressed={fish.key === current}
-          className={`grid h-12 place-items-center rounded-card ${
-            fish.key === current ? "bg-accent-soft" : "bg-surface-2"
-          }`}
-        >
-          <FishThumb fishKey={fish.key} size={32} />
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function CategoryRow({
   item,
   selected,
   editing,
-  picking,
   expanded,
   sparkCount,
   canDelete,
@@ -395,14 +322,12 @@ function CategoryRow({
   onEdit,
   onRename,
   onCancelEdit,
-  onPickFish,
   onFish,
   onDelete,
 }: {
   item: PondCategory;
   selected: boolean;
   editing: boolean;
-  picking: boolean;
   expanded: boolean;
   sparkCount: number;
   canDelete: boolean;
@@ -411,7 +336,6 @@ function CategoryRow({
   onEdit: () => void;
   onRename: (name: string) => void;
   onCancelEdit: () => void;
-  onPickFish: () => void;
   onFish: (key: string) => void;
   onDelete: () => void;
 }) {
@@ -427,14 +351,11 @@ function CategoryRow({
         selected ? "bg-surface" : ""
       }`}
     >
-      <button
-        type="button"
-        onClick={onPickFish}
-        aria-label={`Change fish for ${item.name}`}
-        className="grid size-10 shrink-0 place-items-center"
-      >
-        <FishThumb fishKey={item.fishKey} />
-      </button>
+      <FishInventory
+        current={item.fishKey}
+        label={`Change fish for ${item.name}`}
+        onPick={onFish}
+      />
 
       {editing ? (
         <input
@@ -496,8 +417,6 @@ function CategoryRow({
           ×
         </button>
       ) : null}
-
-      {picking ? <FishPicker current={item.fishKey} onPick={onFish} /> : null}
     </div>
   );
 }
@@ -505,18 +424,14 @@ function CategoryRow({
 function DraftRow({
   name,
   fishKey,
-  picking,
   onName,
-  onPickFish,
   onFish,
   onSave,
   onCancel,
 }: {
   name: string;
   fishKey: string;
-  picking: boolean;
   onName: (name: string) => void;
-  onPickFish: () => void;
   onFish: (key: string) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -529,14 +444,7 @@ function DraftRow({
 
   return (
     <div className="relative flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-4">
-      <button
-        type="button"
-        onClick={onPickFish}
-        aria-label="Choose a fish"
-        className="grid size-10 shrink-0 place-items-center"
-      >
-        <FishThumb fishKey={fishKey} />
-      </button>
+      <FishInventory current={fishKey} label="Choose a fish" onPick={onFish} />
       <input
         ref={inputRef}
         value={name}
@@ -562,7 +470,6 @@ function DraftRow({
       <button type="button" onClick={onCancel} className="type-label px-1 text-ink-soft">
         ×
       </button>
-      {picking ? <FishPicker current={fishKey} onPick={onFish} /> : null}
     </div>
   );
 }

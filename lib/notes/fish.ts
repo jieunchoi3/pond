@@ -97,6 +97,12 @@ export function unusedFishKey(used: string[]) {
   return next ?? FISH_SPECIES[used.length % FISH_SPECIES.length]!.key;
 }
 
+export function randomUnusedFishKey(used: string[]) {
+  const unused = FISH_SPECIES.map((fish) => fish.key).filter((key) => !used.includes(key));
+  const pool = unused.length > 0 ? unused : FISH_SPECIES.map((fish) => fish.key);
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
 export function fishFor(cat: Cat, id: string) {
   const match = getCategoriesSnapshot().find((item) => item.id === cat);
   if (match) return speciesOf(match.fishKey);
