@@ -60,7 +60,7 @@ export function FishInventory({ current, label, onPick }: FishInventoryProps) {
         onCloseAutoFocus={(event) => event.preventDefault()}
       >
         <p className="type-label mb-3 text-ink-soft">Fish</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid max-h-[min(70vh,420px)] grid-cols-3 gap-2 overflow-y-auto pr-0.5">
           {FISH_SPECIES.map((fish) => {
             const selected = fish.key === current;
             return (

@@ -70,6 +70,14 @@ export const FISH_SPECIES: FishKind[] = [
   still("betta-lilac", "Lilac betta", 156),
   still("carp-honey", "Honey carp", 158),
   still("tang-blue", "Blue tang", 160),
+  directional("koi-ink", "Ink koi", 162),
+  directional("goldfish-mint", "Mint goldfish", 154),
+  directional("goldfish-copper", "Copper goldfish", 158),
+  directional("koi-cream", "Cream koi", 164),
+  directional("betta-indigo", "Indigo betta", 178),
+  directional("koi-silver", "Silver koi", 160),
+  directional("goldfish-coral", "Coral goldfish", 152),
+  directional("carp-jade", "Jade carp", 156),
 ];
 
 export const FISH_BY_KEY: Record<string, FishKind> = Object.fromEntries(
