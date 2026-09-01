@@ -25,6 +25,8 @@ npm run dev
 
 Open [http://localhost:43217](http://localhost:43217).
 
+Pasted board images are stored as compressed JPEGs. Oversized PNGs used to make the homepage a multi-megabyte download, which could stall a desktop tab. The pond shell now opens first, then notes hydrate from `/api/pond`.
+
 ## What’s on screen
 
 - **Sidebar** — Frame 1319 outline: the house at the top of the bar takes you back to the pond (ALL). Each category (fish + name) lists its notes underneath. The chevron beside a name folds that list away. Click **add spark** to open the note editor (title, body, canvas) for that pond. Click **add category** (or the +) to make a new one — a random unused fish is assigned, and you can change it. Click a note to open it. Double-click a name to rename. Click the fish icon to open the **Fish** inventory and assign any species (two ponds can share the same fish). The chevron on the spine collapses the bar. **Acted** at the top of the list is the archive of sparks you already solved.

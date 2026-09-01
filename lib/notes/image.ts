@@ -47,6 +47,24 @@ function readAsDataUrl(file: File) {
   });
 }
 
+const MAX_EDGE = 1200;
+const JPEG_QUALITY = 0.72;
+
+function bitmapToJpeg(bitmap: ImageBitmap) {
+  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+}
+
 export async function imageFileToContent(file: File) {
   if (!file.type.startsWith("image/")) {
     throw new Error("That file is not an image.");
@@ -54,25 +72,13 @@ export async function imageFileToContent(file: File) {
   if (file.size > 12 * 1024 * 1024) {
     throw new Error("That image is too large (12 MB max).");
   }
-  if (
-    file.size < 350_000 ||
-    file.type === "image/svg+xml" ||
-    file.type === "image/gif"
-  ) {
+  if (file.type === "image/svg+xml" || file.type === "image/gif") {
     return readAsDataUrl(file);
   }
 
   const bitmap = await createImageBitmap(file);
-  const max = 1600;
-  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
-  const width = Math.max(1, Math.round(bitmap.width * scale));
-  const height = Math.max(1, Math.round(bitmap.height * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return readAsDataUrl(file);
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  const keepAlpha = file.type === "image/png" || file.type === "image/webp";
-  return canvas.toDataURL(keepAlpha ? "image/png" : "image/jpeg", 0.84);
+  const jpeg = bitmapToJpeg(bitmap);
+  bitmap.close();
+  if (jpeg) return jpeg;
+  return readAsDataUrl(file);
 }

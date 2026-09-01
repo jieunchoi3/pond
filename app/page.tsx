@@ -1,10 +1,5 @@
-import { PondScreen } from "@/components/pond/PondScreen";
-import { loadPondState } from "@/lib/notes/sync";
+import { PondShell } from "@/components/pond/PondShell";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-export default async function Home() {
-  const initial = await loadPondState();
-  return <PondScreen initial={initial} />;
+export default function Home() {
+  return <PondShell />;
 }

@@ -27,6 +27,7 @@ import {
   restoreNote,
   subscribeNotes,
 } from "@/lib/notes/store";
+import { shrinkPondImages } from "@/lib/notes/shrink";
 import { hydratePond, installCloudBoot, flushPondSync, restoreLocalPond, refreshPondFromCloud } from "@/lib/notes/sync";
 import { flushLocalPond } from "@/lib/notes/cache";
 import type { PondCloudPayload } from "@/lib/notes/sync";
@@ -62,6 +63,7 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
     void (async () => {
       await restoreLocalPond();
       await hydratePond();
+      await shrinkPondImages();
     })();
     const onHide = () => {
       void flushLocalPond();
