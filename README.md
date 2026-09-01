@@ -4,7 +4,7 @@ A koi pond for sparks — notes you throw in the water and fish out later.
 
 Figma is for **layout, spacing, hierarchy, and assets**. Colours, fonts, sizes, radii, and shadows always come from [`DESIGN.md`](./DESIGN.md). If they disagree, DESIGN.md wins.
 
-Type uses the four Figma families: **Inria Serif** (headings, catch cards), **Indie Flower** (note title + body), **Inter** (chips, buttons), **42dot Sans** (search, and the Korean fallback in every stack). Impact and Plus Jakarta Sans are unused and dropped.
+Type uses **Inria Serif** (headings, catch cards), **Inter** (chips, buttons), and **42dot Sans** (search, note title + body, and Hangul everywhere). Indie Flower is unused.
 
 Layout source: filmmee file `fXEzUMLn0cfW83m2YUoOoZ`
 
