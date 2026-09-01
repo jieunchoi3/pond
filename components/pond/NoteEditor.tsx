@@ -159,6 +159,16 @@ export function NoteEditor({
           />
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              commitText();
+              onClose();
+            }}
+            className="type-label px-2 py-2 text-ink-soft"
+          >
+            Done
+          </button>
           {note.status === "acted" ? (
             <button
               type="button"
@@ -191,16 +201,6 @@ export function NoteEditor({
             className="type-label rounded-pill border border-line px-4 py-2 text-ink-soft"
           >
             Release
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              commitText();
-              onClose();
-            }}
-            className="type-label px-2 py-2 text-ink-soft"
-          >
-            Done
           </button>
         </div>
       </header>
