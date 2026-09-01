@@ -151,8 +151,18 @@ export function CategorySidebar({
           className={`flex h-full flex-col overflow-hidden ${open ? "" : "opacity-0"}`}
           style={{ width: open ? WIDTH : 0 }}
         >
-          <div className="type-label flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line px-4 text-ink-soft">
-            <span>category</span>
+          <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line px-4">
+            <button
+              type="button"
+              onClick={() => onSelect("all")}
+              aria-label="Home"
+              aria-pressed={selected === "all"}
+              className={`grid size-8 place-items-center rounded-pill ${
+                selected === "all" ? "text-ink" : "text-ink-soft"
+              }`}
+            >
+              <Icon icon="bi:house" width={18} height={18} />
+            </button>
             <button
               type="button"
               onClick={startAdd}
