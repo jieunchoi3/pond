@@ -78,7 +78,7 @@ export function FishInventory({ current, label, onPick }: FishInventoryProps) {
                 }`}
               >
                 <FishThumb fishKey={fish.key} size={40} />
-                <span className="type-label w-full truncate text-center text-ink-soft">
+                <span className="type-label w-full text-center leading-tight text-ink-soft [overflow-wrap:anywhere]">
                   {inventoryLabel(fish.species, fish.key)}
                 </span>
               </button>
