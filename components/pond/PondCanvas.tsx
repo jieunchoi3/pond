@@ -10,7 +10,7 @@ import {
   neglectScale,
   sampleFish,
 } from "@/lib/notes/fish";
-import { ALL_DECOR_SRCS, decorFor, hashDecor } from "@/lib/notes/decor";
+import { ALL_DECOR_SRCS, DECOR_SCALE, decorFor, layoutPondDecorations } from "@/lib/notes/decor";
 import { usePondCategories } from "@/lib/notes/categories";
 import type { Note } from "@/lib/notes/types";
 
@@ -44,6 +44,7 @@ type Swim = {
 };
 
 type Sit = {
+  id: string;
   x: number;
   y: number;
   phase: number;
@@ -60,7 +61,6 @@ type Ripple = { id: number; x: number; y: number };
 
 const MAX_DT = 0.048;
 const ASPECT = 0.55;
-const DECOR_SCALE = 0.72;
 
 export function PondCanvas({
   notes,
@@ -170,22 +170,23 @@ export function PondCanvas({
       };
     });
 
-    decorations.forEach((note) => {
+    decorations.forEach((note, index) => {
       const kind = decorFor(note);
       const existing = sit.current[note.id];
       if (existing) {
+        existing.id = note.id;
         existing.src = kind.src;
         existing.width = kind.width;
         existing.height = kind.height;
         existing.scale = DECOR_SCALE;
         return;
       }
-      const salt = hashDecor(note.id);
       sit.current[note.id] = {
+        id: note.id,
         x: 0,
         y: 0,
-        phase: (salt * 0.017) % (Math.PI * 2),
-        bob: 3 + (salt % 4),
+        phase: (index * 1.3) % (Math.PI * 2),
+        bob: 3 + (index % 4),
         scale: DECOR_SCALE,
         width: kind.width,
         height: kind.height,
@@ -201,18 +202,12 @@ export function PondCanvas({
       bounds.current = { w: box.width, h: box.height };
     }
 
-    function seedDecor(m: Sit, id: string, w: number, h: number) {
-      const visW = m.width * m.scale;
-      const visH = m.height * m.scale;
-      const padX = Math.max(28, visW * 0.45);
-      const padY = Math.max(24, visH * 0.4);
-      const spanX = Math.max(1, w - padX * 2);
-      const salt = hashDecor(id);
-      m.x = padX + (salt % spanX);
-      const top = h * 0.55;
-      const spanY = Math.max(1, h - padY - top);
-      m.y = top + ((salt >> 8) % spanY);
-      m.placed = true;
+    function layoutDecors(w: number, h: number) {
+      const boxes = decorRef.current
+        .map((note) => sit.current[note.id])
+        .filter((m): m is Sit => Boolean(m));
+      layoutPondDecorations(boxes, w, h);
+      for (const m of boxes) m.placed = true;
     }
 
     function paintDecor(m: Sit, el: HTMLButtonElement, t: number, reduce: boolean) {
@@ -280,6 +275,9 @@ export function PondCanvas({
     motionQuery.addEventListener("change", onMotion);
 
     measure();
+    if (bounds.current.w > 0 && bounds.current.h > 0) {
+      layoutDecors(bounds.current.w, bounds.current.h);
+    }
     shown.forEach((note, index) => {
       const m = swim.current[note.id];
       const el = nodes.current[note.id];
@@ -293,9 +291,6 @@ export function PondCanvas({
       const m = sit.current[note.id];
       const el = decorNodes.current[note.id];
       if (!m || !el) return;
-      if (bounds.current.w > 0 && bounds.current.h > 0 && !m.placed) {
-        seedDecor(m, note.id, bounds.current.w, bounds.current.h);
-      }
       paintDecor(m, el, last, reduce);
     });
     paintTitle();
@@ -319,12 +314,14 @@ export function PondCanvas({
       decorRef.current.forEach((note) => {
         const m = sit.current[note.id];
         if (!m) return;
-        if (!m.placed || prev.w <= 0 || prev.h <= 0) seedDecor(m, note.id, w, h);
-        else {
-          m.x = prev.w > 0 ? m.x * (w / prev.w) : m.x;
-          m.y = prev.h > 0 ? m.y * (h / prev.h) : m.y;
+        if (m.placed && prev.w > 0 && prev.h > 0) {
+          m.x = m.x * (w / prev.w);
+          m.y = m.y * (h / prev.h);
+        } else {
+          m.placed = false;
         }
       });
+      layoutDecors(w, h);
     });
     observer.observe(pond);
 
@@ -355,12 +352,14 @@ export function PondCanvas({
         paint(m, el, imgs.current[note.id] ?? null, t, reduce);
       }
       const decorList = decorRef.current;
+      if (decorList.some((note) => sit.current[note.id] && !sit.current[note.id]!.placed)) {
+        layoutDecors(w, h);
+      }
       for (let i = 0; i < decorList.length; i += 1) {
         const note = decorList[i]!;
         const m = sit.current[note.id];
         const el = decorNodes.current[note.id];
         if (!m || !el || w <= 0 || h <= 0) continue;
-        if (!m.placed) seedDecor(m, note.id, w, h);
         paintDecor(m, el, t, reduce);
       }
       paintTitle();
