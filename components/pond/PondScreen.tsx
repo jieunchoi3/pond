@@ -61,8 +61,8 @@ export function PondScreen({ initial }: { initial: PondCloudPayload | null }) {
 
   useEffect(() => {
     void (async () => {
-      await restoreLocalPond();
       await hydratePond();
+      await restoreLocalPond();
       await shrinkPondImages();
     })();
     const onHide = () => {

@@ -72,6 +72,18 @@ export async function flushLocalPond() {
   }
 }
 
+export function pondSnapshotTooHeavy(disk: LocalPondSnapshot, limit = 1_200_000) {
+  let chars = 0;
+  for (const note of disk.notes) {
+    for (const block of note.blocks ?? []) {
+      if (typeof block.content !== "string") continue;
+      chars += block.content.length;
+      if (chars > limit) return true;
+    }
+  }
+  return false;
+}
+
 export async function readLocalPond(): Promise<LocalPondSnapshot | null> {
   if (memory?.notes.length) return memory;
   const dbp = openDb();

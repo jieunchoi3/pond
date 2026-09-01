@@ -12,7 +12,7 @@ import {
   looksLikeDemoNotes,
   normalizeNote,
 } from "@/lib/notes/store";
-import { readLocalPond } from "@/lib/notes/cache";
+import { pondSnapshotTooHeavy, readLocalPond } from "@/lib/notes/cache";
 import type { Note, PondCategory } from "@/lib/notes/types";
 
 const STATE_ID = "default";
@@ -312,6 +312,7 @@ export async function restoreLocalPond() {
   if (typeof window === "undefined") return;
   const disk = await readLocalPond();
   if (!disk || disk.notes.length === 0) return;
+  if (pondSnapshotTooHeavy(disk)) return;
   const next = reconcile(
     {
       notes: disk.notes,
