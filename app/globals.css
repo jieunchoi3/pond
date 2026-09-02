@@ -339,6 +339,7 @@ textarea.type-body {
   border-radius: var(--r-card);
   background: var(--surface);
   color: var(--ink);
+  font-family: var(--font-ui);
   pointer-events: none;
   opacity: 0;
   transform: translate3d(-9999px, -9999px, 0);

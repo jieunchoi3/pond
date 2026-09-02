@@ -530,7 +530,7 @@ export function PondCanvas({
       })}
       <div
         ref={titleRef}
-        className="pond-fish-title type-note-title shadow-pond-sm"
+        className="pond-fish-title type-label shadow-pond-sm"
         data-open="false"
         aria-hidden={hoverTitle ? undefined : true}
       >
