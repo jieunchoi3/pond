@@ -10,7 +10,7 @@ import {
   neglectScale,
   sampleFish,
 } from "@/lib/notes/fish";
-import { ALL_DECOR_SRCS, DECOR_SCALE, decorFor, layoutPondDecorations } from "@/lib/notes/decor";
+import { DECOR_SCALE, decorFor, layoutPondDecorations, warmDecorImages } from "@/lib/notes/decor";
 import { usePondCategories } from "@/lib/notes/categories";
 import type { Note } from "@/lib/notes/types";
 
@@ -62,6 +62,8 @@ type Ripple = { id: number; x: number; y: number };
 const MAX_DT = 0.048;
 const ASPECT = 0.55;
 
+warmDecorImages();
+
 export function PondCanvas({
   notes,
   decorations = [],
@@ -106,7 +108,7 @@ export function PondCanvas({
   }, [decorations]);
 
   useEffect(() => {
-    for (const src of [...ALL_FISH_SRCS, ...ALL_DECOR_SRCS]) {
+    for (const src of ALL_FISH_SRCS) {
       const image = new Image();
       image.src = src;
     }
@@ -197,9 +199,13 @@ export function PondCanvas({
     });
 
     function measure() {
-      const box = pondRef.current?.getBoundingClientRect();
-      if (!box) return;
-      bounds.current = { w: box.width, h: box.height };
+      const pond = pondRef.current;
+      if (!pond) return;
+      const box = pond.getBoundingClientRect();
+      bounds.current = {
+        w: box.width || pond.offsetWidth,
+        h: box.height || pond.offsetHeight,
+      };
     }
 
     function layoutDecors(w: number, h: number) {
@@ -274,6 +280,7 @@ export function PondCanvas({
     };
     motionQuery.addEventListener("change", onMotion);
 
+    pond.offsetWidth;
     measure();
     if (bounds.current.w > 0 && bounds.current.h > 0) {
       layoutDecors(bounds.current.w, bounds.current.h);
@@ -438,6 +445,49 @@ export function PondCanvas({
           style={{ left: ripple.x - 28, top: ripple.y - 28 }}
         />
       ))}
+      {decorations.map((note) => {
+        const kind = decorFor(note);
+        const dim = !visible.has(note.id);
+        return (
+          <button
+            key={`decor-${note.id}`}
+            ref={(el) => {
+              decorNodes.current[note.id] = el;
+            }}
+            type="button"
+            data-note-id={note.id}
+            className="pond-fish"
+            style={{
+              width: kind.width,
+              pointerEvents: dim ? "none" : "auto",
+            }}
+            onPointerEnter={() => {
+              if (!dim) showTitle(note);
+            }}
+            onPointerLeave={() => hideTitle(note.id)}
+            onFocus={() => {
+              if (!dim) showTitle(note);
+            }}
+            onBlur={() => hideTitle(note.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (!dim) onOpen(note.id);
+            }}
+            aria-label={`${kind.label}: ${note.title || "Untitled spark"}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={kind.src}
+              alt=""
+              width={kind.width}
+              height={kind.height}
+              draggable={false}
+              decoding="async"
+              fetchPriority="high"
+            />
+          </button>
+        );
+      })}
       {shown.map((note) => {
         const fish = fishFor(note.cat, note.id);
         const dim = !visible.has(note.id);
@@ -484,47 +534,6 @@ export function PondCanvas({
                 <span className="absolute top-[-5px] right-1.5 size-1.5 rounded-pill bg-surface" />
               ) : null}
             </span>
-          </button>
-        );
-      })}
-      {decorations.map((note) => {
-        const kind = decorFor(note);
-        const dim = !visible.has(note.id);
-        return (
-          <button
-            key={`decor-${note.id}`}
-            ref={(el) => {
-              decorNodes.current[note.id] = el;
-            }}
-            type="button"
-            data-note-id={note.id}
-            className="pond-fish"
-            style={{
-              width: kind.width,
-              pointerEvents: dim ? "none" : "auto",
-            }}
-            onPointerEnter={() => {
-              if (!dim) showTitle(note);
-            }}
-            onPointerLeave={() => hideTitle(note.id)}
-            onFocus={() => {
-              if (!dim) showTitle(note);
-            }}
-            onBlur={() => hideTitle(note.id)}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (!dim) onOpen(note.id);
-            }}
-            aria-label={`${kind.label}: ${note.title || "Untitled spark"}`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={kind.src}
-              alt=""
-              width={kind.width}
-              height={kind.height}
-              draggable={false}
-            />
           </button>
         );
       })}

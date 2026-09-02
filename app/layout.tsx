@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Asta_Sans, Inria_Serif, Inter } from "next/font/google";
+import { ALL_DECOR_SRCS } from "@/lib/notes/decor";
 import "./globals.css";
 
 const inria = Inria_Serif({
@@ -35,6 +36,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ko"
       className={`${inria.variable} ${inter.variable} ${fortyTwoDot.variable} h-full antialiased`}
     >
+      <head>
+        {ALL_DECOR_SRCS.map((src) => (
+          <link key={src} rel="preload" as="image" href={src} fetchPriority="high" />
+        ))}
+      </head>
       <body className="min-h-full bg-water-1 font-sans text-ink">{children}</body>
     </html>
   );

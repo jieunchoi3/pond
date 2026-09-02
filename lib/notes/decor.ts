@@ -30,6 +30,15 @@ export const DECOR_BY_KEY: Record<string, DecorKind> = Object.fromEntries(
 
 export const ALL_DECOR_SRCS = DECOR_SPECIES.map((item) => item.src);
 
+export function warmDecorImages() {
+  if (typeof window === "undefined") return;
+  for (const src of ALL_DECOR_SRCS) {
+    const image = new Image();
+    image.fetchPriority = "high";
+    image.src = src;
+  }
+}
+
 export function isDecorKey(value: unknown): value is string {
   return typeof value === "string" && Boolean(DECOR_BY_KEY[value]);
 }

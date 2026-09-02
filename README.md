@@ -25,7 +25,7 @@ npm run dev
 
 Open [http://localhost:43217](http://localhost:43217).
 
-Pasted board images are stored as compressed JPEGs. Oversized PNGs used to make the homepage a multi-megabyte download, which could stall a desktop tab. The pond shell now opens first, then notes hydrate from `/api/pond`.
+Pasted board images are stored as compressed JPEGs. Oversized PNGs used to make the homepage a multi-megabyte download, which could stall a desktop tab. The pond shell now opens first, then notes hydrate from `/api/pond`. Decoration sprites preload with the page so lilies and wheels are already decoded when the water appears.
 
 ## What’s on screen
 
