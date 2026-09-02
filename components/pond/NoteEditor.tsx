@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@iconify/react";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { BoardCard } from "@/components/pond/BoardCard";
 import { EditorToolbar } from "@/components/pond/EditorToolbar";
@@ -198,9 +199,10 @@ export function NoteEditor({
               commitText();
               onDelete();
             }}
-            className="type-label rounded-pill border border-line px-4 py-2 text-ink-soft"
+            aria-label={`Delete ${note.title || "Untitled spark"}`}
+            className="grid size-8 place-items-center text-[#C4473A]"
           >
-            Release
+            <Icon icon="bi:trash3" width={16} height={16} />
           </button>
         </div>
       </header>
